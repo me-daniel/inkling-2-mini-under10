@@ -35,7 +35,7 @@ GATE_UP = {"iq3_xxs": SM / "pool-3bit.gguf", "iq2_xxs": SM / "pool-2bit.gguf", "
            "rf-iq2_xs": M / "meanfit/rf-iq2_xs.gguf", "rf-iq2_s": M / "meanfit/rf-iq2_s.gguf"}
 UD_SCALE = "ffn_gate_up_exps.scale"
 DOWN = {"iq4_nl": lambda l: SM / "pool-3bit.gguf", "q2opt": lambda l: SM / f"q2opt/L{l}.gguf",
-        "diag": lambda l: M / f"down/diag-L{l}.gguf", "gptq": lambda l: M / f"down/gptq-L{l}.gguf"}
+        "diag": lambda l: M / f"down/diag-L{l}.gguf", "q2u": lambda l: M / f"down/q2u-L{l}.gguf", "gptq": lambda l: M / f"down/gptq-L{l}.gguf"}
 NE = {"udfile": M / "ext/mainline/UD-IQ2_XXS.gguf",  # Unsloth's own non-expert tensors (same names in mainline layout)
       "ud": M / "pools/ne-ud.gguf", "q8_0": SM / "pool-3bit.gguf", "q6_k": SM / "cand.gguf", "q5_k": M / "pools/ne-q5.gguf", "q4_k": M / "pools/ne-q4.gguf"}
 NE_RE = {"all": r"^(?!.*_exps\.)",  # every non-expert tensor (never a .scale of an expert)

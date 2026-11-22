@@ -69,3 +69,10 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 ## 2026-11-22, 07:00: M0r result
 
 - M0r (all 24 gate_up tensors of M0 with mean-aware scale refit; modeled error -19% to -26% per layer) scores 0.17029 on S; M0r - M0 = +0.07237 [+0.06723, +0.07730], top-1 83.18% vs 87.09%. **Dead** by the 06:40 rule; the refit line stops. Like GPTQ, a lower surrogate error (here diag(Var x) + m m^T from the imatrix, in sample) went with a much worse KL. The full-Gram check on layers 6 and 20 (sibling Grams) runs next to say whether the true input-Gram error rose too.
+
+## 2026-11-22, 07:15: attenuation hypothesis (registered before its data)
+
+- Bug check of M0r (sibling's list): the refit decodes identically in llama.cpp's own to_float and in gguf-py (max difference 0), and it lowers plain L2, imatrix-weighted L2 and the mean-direction error. So no format bug. What it also does: it shrinks the weights. Gain <q,w>/<w,w> per layer, llama-quantize / refit / UD: L0 IQ1_S 0.944 / 0.793 / 0.947; L5 IQ2_XXS 0.974 / 0.890 / 0.976; L16 IQ2_S 0.995 / 0.941 / 0.996 (energy <q,q>/<w,w>: 1.137 / 0.804 / 1.172 at L0).
+- Same pattern in the down projections: our Q2_0 encodings (q2opt, GPTQ, uniform) have gain 0.86-0.87 and energy 0.86-0.89; UD's Q2_0 has gain 0.91 and energy 0.95 (L0, L12).
+- Hypothesis: least-squares fitting attenuates each tensor's output (gain < 1), and in a model with 48 layer visits that attenuation compounds instead of averaging out, so a lower MSE can mean a worse KL. UD's encodings attenuate less.
+- Test (cheap, no new encoder): rescale each output row of our Q2_0 down tensors to gain 1 (multiply the fp16 block scales of that row by 1/gain; codes unchanged; `scripts/degain.py`). M0u = M0 with de-attenuated down at its 17 Q2_0 slots, vs M0. X5 = X2 with de-attenuated q2opt at UD's 17 Q2_0 slots, vs X2 (the release-relevant comparison: X5 counts only with the paired CI vs X2 below zero, and as a candidate only below UD). X4 (raw q2opt) is dropped: it attenuates more than UD.
