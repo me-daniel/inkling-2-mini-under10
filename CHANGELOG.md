@@ -35,3 +35,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 1. Diagnostic only: the same encodings scored on a Gram from S text with the X2 forward (`scripts/sgram.sh`). Nothing is chosen on it.
 2. GPTQ v2 (`scripts/gptq2.sh`): fit Grams on X2 itself; alpha from {0.25, 1, 4, 16} by the lowest mean output error over layers 0 and 12 on a Gram from WikiText-2 train (`data/calib-wt.txt`, the sibling's file, 0 shared 13-grams with S, T1, T2, T3), chosen by script; if no alpha beats diag there, stop.
 3. X3 = X2 with GPTQ v2 at all 17 Q2_0 down slots. It becomes the candidate only if it beats X2 on S with the paired CI below zero. Then G4 on T1/T2 as registered. This step is post hoc and is reported as such.
+
+## 2026-11-22, 05:10: amendment to the GPTQ v2 alpha rule (before any sweep result)
+
+- alpha is chosen by the lowest mean of two held-out errors over layers 0 and 12: the WikiText-2 train Gram (`grams/wt-x2`) and the held-out conversations Gram (`grams/eval`), equal weight. A WikiText-only choice would align with S and T1.
+- `scripts/gptq2.sh` (already running) picks on WikiText alone; `scripts/alpha-pool.sh` recomputes the pooled choice. If they differ, X3 is re-encoded with the pooled alpha before it is scored.
+- G4 is unchanged: T1 and T2 must each pass with their own CI. T2 (reasoning traces) is the cross-domain guard and is reported separately.
