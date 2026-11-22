@@ -148,3 +148,7 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - m0rk-udne (M0rk with UD's non-expert tensors): 0.08467, m0rk-udne - M0rk -0.00246 [-0.00327, -0.00168], against -0.00629 [-0.00679, -0.00578] for the same swap with UD's gate_up in place.
 - Reading: both (a) and (b) hold. About 60% of the earlier non-expert share is joint with UD's expert tensors. About 0.0025 is a standalone edge of UD's attention/head encoding, invisible to diagonal metrics (11:45). That 0.0025 is the ceiling for full-Gram work on attention in our stack, so it's parked behind gate_up and down.
+
+## 2026-11-22, 12:35: gain sweep result
+
+- m0rk-g93 +0.00084 [+0.00012, +0.00157], m0rk-g107 +0.00284 [+0.00218, +0.00347], both vs M0rk (gain 1.00). A parabola through the three points has its minimum at g = 0.98, only about 0.00014 below g = 1. Gain 1.00 stays the target for our Q2_0 down. Sweep closed.
