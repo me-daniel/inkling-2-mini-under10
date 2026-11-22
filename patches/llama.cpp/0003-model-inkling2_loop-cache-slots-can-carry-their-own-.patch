@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 02:52:42 +0100
+Subject: [PATCH 3/8] model : inkling2_loop cache slots can carry their own
+ routed experts
+
+---
+ src/llama-model.cpp          |  4 +---
+ src/models/inkling2-loop.cpp | 36 ++++++++++++++++++++++++++++++++++++
+ src/models/models.h          |  7 +++++++
+ 3 files changed, 44 insertions(+), 3 deletions(-)
+
+diff --git a/src/llama-model.cpp b/src/llama-model.cpp
+index 914ba9f17..a23cea3d4 100644
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -2008,9 +2008,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
+         }
+         // inkling2_loop: the cache slots copied the physical layers before the scale pass, re-share them
+         if (auto * lm = dynamic_cast<llama_model_inkling2_loop *>(this)) {
+-            for (int il = lm->n_phys; il < n_layer_all; ++il) {
+-                layers[il] = layers[lm->layer_phys(il)];
+-            }
++            lm->share_slots();
+         }
+         // output scales
+         if (output) {
+diff --git a/src/models/inkling2-loop.cpp b/src/models/inkling2-loop.cpp
+index 0de66baee..29b493886 100644
+--- a/src/models/inkling2-loop.cpp
++++ b/src/models/inkling2-loop.cpp
+@@ -65,6 +65,42 @@ void llama_model_inkling2_loop::load_arch_tensors(llama_model_loader & ml) {
+     for (int il = n_phys; il < (int) hparams.n_layer(); ++il) {
+         layers[il] = layers[layer_phys(il)];
+     }
++
++    // a slot may carry its own routed experts (e.g. blk.30.ffn_down_exps for pass 2 over layer 6), used only by that pass;
++    // they are created only when listed in the file, and their scales are left to the generic scale pass
++    const int n_slot = (int) hparams.n_layer() - n_phys;
++    slot_own_gate_up.assign(n_slot, 0);
++    slot_own_down.assign(n_slot, 0);
++    const int64_t n_expert = hparams.n_expert;
++    for (int il = n_phys; il < (int) hparams.n_layer(); ++il) {
++        const int64_t n_ff_exp = hparams.n_ff_exp(il);
++        auto & layer = layers[il];
++        if (gguf_find_tensor(ml.metadata, tn(LLM_TENSOR_FFN_GATE_UP_EXPS, "weight", il).str().c_str()) >= 0) {
++            layer.ffn_gate_up_exps = create_tensor(tn(LLM_TENSOR_FFN_GATE_UP_EXPS, "weight", il), {n_embd, 2*n_ff_exp, n_expert}, 0);
++            layer.ffn_up_exps_s    = nullptr;
++            slot_own_gate_up[il - n_phys] = 1;
++        }
++        if (gguf_find_tensor(ml.metadata, tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il).str().c_str()) >= 0) {
++            layer.ffn_down_exps   = create_tensor(tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il), {n_ff_exp, n_embd, n_expert}, 0);
++            layer.ffn_down_exps_s = nullptr;
++            slot_own_down[il - n_phys] = 1;
++        }
++    }
++}
++
++void llama_model_inkling2_loop::share_slots() {
++    for (int il = n_phys; il < (int) hparams.n_layer(); ++il) {
++        const auto own = layers[il];
++        layers[il] = layers[layer_phys(il)];
++        if (slot_own_gate_up[il - n_phys]) {
++            layers[il].ffn_gate_up_exps = own.ffn_gate_up_exps;
++            layers[il].ffn_up_exps_s    = own.ffn_up_exps_s;
++        }
++        if (slot_own_down[il - n_phys]) {
++            layers[il].ffn_down_exps   = own.ffn_down_exps;
++            layers[il].ffn_down_exps_s = own.ffn_down_exps_s;
++        }
++    }
+ }
+ 
+ std::unique_ptr<llm_graph_context> llama_model_inkling2_loop::build_arch_graph(const llm_graph_params & params) const {
+diff --git a/src/models/models.h b/src/models/models.h
+index 636afeae9..cf68f4f91 100644
+--- a/src/models/models.h
++++ b/src/models/models.h
+@@ -2551,6 +2551,13 @@ struct llama_model_inkling2_loop : public llama_model_inkling2 {
+     int n_layer_phys() const override { return n_phys; }
+     int layer_phys(int il) const;
+ 
++    // copies the physical layers into the cache slots, keeping the routed experts a slot has of its own
++    void share_slots();
++
++    // per cache slot (il - n_phys): the slot has its own ffn_gate_up_exps / ffn_down_exps in the file
++    std::vector<uint8_t> slot_own_gate_up;
++    std::vector<uint8_t> slot_own_down;
++
+     int      n_phys     = 0;
+     uint32_t core_start = 0;
+     uint32_t core_end   = 0;

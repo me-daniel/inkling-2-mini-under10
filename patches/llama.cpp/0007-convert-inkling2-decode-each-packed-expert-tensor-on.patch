@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 04:04:28 +0100
+Subject: [PATCH 7/8] convert : inkling2 decode each packed expert tensor once
+
+---
+ conversion/inkling2.py | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/conversion/inkling2.py b/conversion/inkling2.py
+index 63e73a6d5..999b3593e 100644
+--- a/conversion/inkling2.py
++++ b/conversion/inkling2.py
+@@ -30,10 +30,24 @@ _E2M1 = np.array([0, 0.5, 1, 1.5, 2, 3, 4, 6, -0.0, -0.5, -1, -1.5, -2, -3, -4,
+ _EXPERT_CHUNK_ROWS = 128
+ 
+ 
++# packed bytes and scales of the tensor being written; its chunks are consumed in order, so one entry suffices
++_PACKED_CACHE: dict[str, tuple[np.ndarray, np.ndarray]] = {}
++
++
++def _packed_bytes(name: str, weight: Callable[[], Tensor], scale: Callable[[], Tensor]) -> tuple[np.ndarray, np.ndarray]:
++    hit = _PACKED_CACHE.get(name)
++    if hit is None:
++        _PACKED_CACHE.clear()
++        hit = (LazyTorchTensor.to_eager(weight().view(torch.uint8)).numpy(), LazyTorchTensor.to_eager(scale().view(torch.uint8)).numpy())
++        _PACKED_CACHE[name] = hit
++    return hit
++
++
+ def _dequant_expert_chunk(weight: Callable[[], Tensor], scale: Callable[[], Tensor], amax: Callable[[], Tensor] | None, denominator: Callable[[], Tensor] | None, name: str, expert: int, rows: slice) -> np.ndarray:
+-    # Fresh lazy tensors release their mappings after each chunk instead of caching the layer.
+-    packed = LazyTorchTensor.to_eager(weight().view(torch.uint8)[expert, rows]).numpy()
+-    scales = LazyTorchTensor.to_eager(scale().view(torch.uint8)[expert, rows]).numpy()
++    # materializing the lazy tensor per chunk re-reads the whole packed layer; slice one cached copy instead
++    packed_all, scales_all = _packed_bytes(name, weight, scale)
++    packed = packed_all[expert, rows]
++    scales = scales_all[expert, rows]
+     if amax is not None:
+         block_scale = _E4M3[scales]
+         if np.isnan(block_scale).any():

@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 01:41:51 +0100
+Subject: [PATCH 2/8] tests : check that inkling2_loop passes share the expert
+ scales
+
+---
+ tests/test-llama-archs.cpp | 77 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+diff --git a/tests/test-llama-archs.cpp b/tests/test-llama-archs.cpp
+index 6faa8843d..207fe8879 100644
+--- a/tests/test-llama-archs.cpp
++++ b/tests/test-llama-archs.cpp
+@@ -56,6 +56,34 @@ struct tensor_data_params {
+ // fills the values of one tensor, the name carries whatever the property needs
+ typedef void (*tensor_filler)(std::vector<float> & dst, const char * name, const tensor_data_params & params);
+ 
++// --loop-scales: rescales the routed-expert tensors of one layer after filling,
++// the ".scale" tensors by factor and, if weights is set, the expert weights by 1/factor
++static struct {
++    int   layer   = -1;
++    float factor  = 1.0f;
++    bool  weights = false;
++} g_expert_rescale;
++
++static void apply_expert_rescale(std::vector<float> & dst, const char * name) {
++    if (g_expert_rescale.layer < 0) {
++        return;
++    }
++    const std::string s      = name;
++    const std::string prefix = "blk." + std::to_string(g_expert_rescale.layer) + ".";
++    if (s.rfind(prefix, 0) != 0 ||
++        (s.find(".ffn_gate_up_exps.") == std::string::npos && s.find(".ffn_down_exps.") == std::string::npos)) {
++        return;
++    }
++    const bool is_scale = s.size() >= 6 && s.compare(s.size() - 6, 6, ".scale") == 0;
++    if (!is_scale && !g_expert_rescale.weights) {
++        return;
++    }
++    const float mul = is_scale ? g_expert_rescale.factor : 1.0f/g_expert_rescale.factor;
++    for (float & v : dst) {
++        v *= mul;
++    }
++}
++
+ // a pool of normal draws, generated once and reused for every model
+ static std::vector<float> g_normal_pool;
+ static const size_t NORMAL_POOL_SIZE = 16 * 1024 * 1024;
+@@ -153,6 +181,7 @@ static void set_tensor_data(struct ggml_tensor * tensor, void * userdata) {
+ 
+     std::vector<float> tmp(ggml_nelements(tensor));
+     fill(tmp, tensor->name, params);
++    apply_expert_rescale(tmp, tensor->name);
+ 
+     if (tensor->type == GGML_TYPE_F32) {
+         ggml_backend_tensor_set(tensor, tmp.data(), 0, ggml_nbytes(tensor));
+@@ -177,6 +206,7 @@ static void usage(char ** argv) {
+     LOG("  -v <N>                   Set log verbosity level\n");
+     LOG("  -b, --backend <backend>  Run only on the given backend device\n");
+     LOG("  --kv-shift               Check K-shift against a decode at the shifted positions (CPU only)\n");
++    LOG("  --loop-scales            Check that every inkling2_loop pass reads the expert scales of its physical layer (CPU only)\n");
+     LOG("  -h, --help               Show this help message\n\n");
+     LOG("Examples:\n");
+     LOG("  %s\n", argv[0]);
+@@ -1904,6 +1934,47 @@ static int test_kv_shift(const std::string & arch_filter, const size_t seed, con
+     return n_failed == 0 ? 0 : 1;
+ }
+ 
++// inkling2_loop shares the weights of the core layers with the cache slots of the later passes.
++// Halving the routed-expert weights of the core layer and doubling their ".scale" must leave the logits
++// unchanged, which holds only if the second pass (slot 3) reads the scales of physical layer 1.
++// Power-of-2 rescaling is exact and the CPU graph is deterministic, so the checks compare bit-exactly.
++static int test_loop_scales(const size_t seed, const float stdev) {
++    const llm_arch arch  = LLM_ARCH_INKLING2_LOOP;
++    const int      core  = 1; // prelude 0, core 1, coda 2, see get_gguf_ctx
++    const int      slot2 = 3; // the cache slot of the second pass over the core
++
++    const std::vector<llama_token> tokens = get_tokens(32, 128, seed);
++
++    auto logits_for = [&](int layer, bool weights) {
++        g_expert_rescale.layer   = layer;
++        g_expert_rescale.factor  = 2.0f;
++        g_expert_rescale.weights = weights;
++        gguf_context_ptr gguf_ctx = get_gguf_ctx(arch, /*moe =*/ true);
++        auto model_ctx = get_model_and_ctx(gguf_ctx.get(), nullptr, seed, stdev, {});
++        g_expert_rescale.layer = -1;
++        return get_logits(model_ctx.first.get(), model_ctx.second.get(), tokens);
++    };
++
++    const std::vector<float> ref    = logits_for(-1,    false);
++    const std::vector<float> folded = logits_for(core,  true);  // must match ref
++    const std::vector<float> scaled = logits_for(core,  false); // must differ, else the test cannot see scales
++    const std::vector<float> unused = logits_for(slot2, false); // must match ref, the slot has no scales of its own
++
++    const double e_folded = nmse(ref, folded);
++    const double e_scaled = nmse(ref, scaled);
++    const double e_unused = nmse(ref, unused);
++
++    const bool ok_folded = e_folded == 0.0;
++    const bool ok_scaled = e_scaled >  0.0;
++    const bool ok_unused = e_unused == 0.0;
++
++    LOG("loop-scales: fold weights/2 scale*2 on blk.%d: nmse %.3e (%s)\n", core,  e_folded, ok_folded ? "OK" : "FAIL");
++    LOG("loop-scales: scale*2 only on blk.%d:          nmse %.3e (%s)\n", core,  e_scaled, ok_scaled ? "OK" : "FAIL, no sensitivity");
++    LOG("loop-scales: scale*2 only on slot blk.%d:     nmse %.3e (%s)\n", slot2, e_unused, ok_unused ? "OK" : "FAIL");
++
++    return ok_folded && ok_scaled && ok_unused ? 0 : 1;
++}
++
+ int main(int argc, char ** argv) {
+     // init the logger at max verbosity. filter with a custom callback respecting the user-configure verbosity
+     common_log_set_verbosity_thold(LOG_LEVEL_DEBUG);
+@@ -1918,6 +1989,7 @@ int main(int argc, char ** argv) {
+     std::string out;
+     const char * target_backend = nullptr;
+     bool kv_shift = false;
++    bool loop_scales = false;
+ 
+     int verbosity = LOG_LEVEL_ERROR;
+ 
+@@ -1987,6 +2059,8 @@ int main(int argc, char ** argv) {
+             }
+         } else if (strcmp(argv[i], "--kv-shift") == 0) {
+             kv_shift = true;
++        } else if (strcmp(argv[i], "--loop-scales") == 0) {
++            loop_scales = true;
+         } else {
+             LOG_ERR("%s: unknown argument: %s\n", __func__, argv[i]);
+             usage(argv);
+@@ -2008,6 +2082,9 @@ int main(int argc, char ** argv) {
+         if (kv_shift) {
+             return test_kv_shift(arch_filter, seed, stdev, verbosity);
+         }
++        if (loop_scales) {
++            return test_loop_scales(seed, stdev);
++        }
+         return test_backends(arch_filter, seed, stdev, verbosity, target_backend);
+     } catch (const std::exception & err) {
+         fprintf(stderr, "encountered runtime error: %s\n", err.what());

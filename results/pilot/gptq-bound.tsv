@@ -1,0 +1,13 @@
+layer	encoding	bpw	err_fit	err_eval
+0	Q2_0 stock	2.25	0.46733	0.46171
+0	Q2_0 diag-weighted (q2opt)	2.25	0.10525	0.10962
+0	Q2_0 GPTQ damp 0.01	2.25	0.04762	0.16691
+0	Q2_0 GPTQ damp 0.1	2.25	0.04839	0.12446
+0	IQ4_NL (llama-quantize, imatrix)	4.5	0.00444	0.00421
+# layer 0: fit rows per expert median 1388, min 169
+12	Q2_0 stock	2.25	0.50078	0.49627
+12	Q2_0 diag-weighted (q2opt)	2.25	0.11773	0.11824
+12	Q2_0 GPTQ damp 0.01	2.25	0.07909	0.13013
+12	Q2_0 GPTQ damp 0.1	2.25	0.07942	0.11843
+12	IQ4_NL (llama-quantize, imatrix)	4.5	0.00487	0.00475
+# layer 12: fit rows per expert median 3750, min 235

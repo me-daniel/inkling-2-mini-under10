@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 02:52:42 +0100
+Subject: [PATCH 4/8] tests : check that inkling2_loop slots use their own
+ routed experts
+
+---
+ tests/test-llama-archs.cpp | 74 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 73 insertions(+), 1 deletion(-)
+
+diff --git a/tests/test-llama-archs.cpp b/tests/test-llama-archs.cpp
+index 207fe8879..20aae5d4c 100644
+--- a/tests/test-llama-archs.cpp
++++ b/tests/test-llama-archs.cpp
+@@ -64,6 +64,21 @@ static struct {
+     bool  weights = false;
+ } g_expert_rescale;
+ 
++// --loop-slots: fills the routed experts of one cache slot with the values of its physical layer
++static struct {
++    std::string slot; // e.g. "blk.3."
++    std::string phys; // e.g. "blk.1."
++} g_slot_alias;
++
++static std::string fill_key(const char * name) {
++    const std::string s = name;
++    if (g_slot_alias.slot.empty() || s.rfind(g_slot_alias.slot, 0) != 0 ||
++        (s.find(".ffn_gate_up_exps.") == std::string::npos && s.find(".ffn_down_exps.") == std::string::npos)) {
++        return s;
++    }
++    return g_slot_alias.phys + s.substr(g_slot_alias.slot.size());
++}
++
+ static void apply_expert_rescale(std::vector<float> & dst, const char * name) {
+     if (g_expert_rescale.layer < 0) {
+         return;
+@@ -180,7 +195,7 @@ static void set_tensor_data(struct ggml_tensor * tensor, void * userdata) {
+     }
+ 
+     std::vector<float> tmp(ggml_nelements(tensor));
+-    fill(tmp, tensor->name, params);
++    fill(tmp, fill_key(tensor->name).c_str(), params);
+     apply_expert_rescale(tmp, tensor->name);
+ 
+     if (tensor->type == GGML_TYPE_F32) {
+@@ -207,6 +222,7 @@ static void usage(char ** argv) {
+     LOG("  -b, --backend <backend>  Run only on the given backend device\n");
+     LOG("  --kv-shift               Check K-shift against a decode at the shifted positions (CPU only)\n");
+     LOG("  --loop-scales            Check that every inkling2_loop pass reads the expert scales of its physical layer (CPU only)\n");
++    LOG("  --loop-slots             Check that an inkling2_loop cache slot uses its own routed experts when the file has them (CPU only)\n");
+     LOG("  -h, --help               Show this help message\n\n");
+     LOG("Examples:\n");
+     LOG("  %s\n", argv[0]);
+@@ -1975,6 +1991,56 @@ static int test_loop_scales(const size_t seed, const float stdev) {
+     return ok_folded && ok_scaled && ok_unused ? 0 : 1;
+ }
+ 
++// A cache slot may carry its own routed experts, used only by its pass. With the slot's tensors filled with
++// the values of its physical layer the logits must not change; with other values, or a rescaled slot scale,
++// they must, which shows that the second pass reads the slot's tensors and scales.
++static int test_loop_slots(const size_t seed, const float stdev) {
++    const llm_arch arch = LLM_ARCH_INKLING2_LOOP;
++    const std::vector<llama_token> tokens = get_tokens(32, 128, seed);
++
++    auto logits_for = [&](bool slot_tensors, bool alias, int rescale_layer) {
++        g_slot_alias.slot = alias ? "blk.3." : "";
++        g_slot_alias.phys = alias ? "blk.1." : "";
++        g_expert_rescale.layer   = rescale_layer;
++        g_expert_rescale.factor  = 2.0f;
++        g_expert_rescale.weights = false;
++        gguf_context_ptr gguf_ctx = get_gguf_ctx(arch, /*moe =*/ true);
++        if (slot_tensors) {
++            // the slot of the second pass over the core (physical layer 1), see get_gguf_ctx
++            for (const char * name : { "blk.3.ffn_gate_up_exps.weight", "blk.3.ffn_down_exps.weight" }) {
++                ggml_tensor t;
++                memset(&t, 0, sizeof(ggml_tensor));
++                t.type = GGML_TYPE_F32;
++                ggml_set_name(&t, name);
++                gguf_add_tensor(gguf_ctx.get(), &t);
++            }
++        }
++        auto model_ctx = get_model_and_ctx(gguf_ctx.get(), nullptr, seed, stdev, {});
++        g_slot_alias = {};
++        g_expert_rescale.layer = -1;
++        return get_logits(model_ctx.first.get(), model_ctx.second.get(), tokens);
++    };
++
++    const std::vector<float> ref    = logits_for(false, false, -1);
++    const std::vector<float> same   = logits_for(true,  true,  -1); // slot holds the physical values: must match ref
++    const std::vector<float> own    = logits_for(true,  false, -1); // slot holds other values: must differ
++    const std::vector<float> scaled = logits_for(true,  true,   3); // slot scale doubled: must differ
++
++    const double e_same   = nmse(ref, same);
++    const double e_own    = nmse(ref, own);
++    const double e_scaled = nmse(ref, scaled);
++
++    const bool ok_same   = e_same   == 0.0;
++    const bool ok_own    = e_own    >  0.0;
++    const bool ok_scaled = e_scaled >  0.0;
++
++    LOG("loop-slots: slot blk.3 = physical values:   nmse %.3e (%s)\n", e_same,   ok_same   ? "OK" : "FAIL");
++    LOG("loop-slots: slot blk.3 = own values:        nmse %.3e (%s)\n", e_own,    ok_own    ? "OK" : "FAIL, slot tensors unused");
++    LOG("loop-slots: slot blk.3 scale*2:             nmse %.3e (%s)\n", e_scaled, ok_scaled ? "OK" : "FAIL, slot scale unused");
++
++    return ok_same && ok_own && ok_scaled ? 0 : 1;
++}
++
+ int main(int argc, char ** argv) {
+     // init the logger at max verbosity. filter with a custom callback respecting the user-configure verbosity
+     common_log_set_verbosity_thold(LOG_LEVEL_DEBUG);
+@@ -1990,6 +2056,7 @@ int main(int argc, char ** argv) {
+     const char * target_backend = nullptr;
+     bool kv_shift = false;
+     bool loop_scales = false;
++    bool loop_slots = false;
+ 
+     int verbosity = LOG_LEVEL_ERROR;
+ 
+@@ -2061,6 +2128,8 @@ int main(int argc, char ** argv) {
+             kv_shift = true;
+         } else if (strcmp(argv[i], "--loop-scales") == 0) {
+             loop_scales = true;
++        } else if (strcmp(argv[i], "--loop-slots") == 0) {
++            loop_slots = true;
+         } else {
+             LOG_ERR("%s: unknown argument: %s\n", __func__, argv[i]);
+             usage(argv);
+@@ -2085,6 +2154,9 @@ int main(int argc, char ** argv) {
+         if (loop_scales) {
+             return test_loop_scales(seed, stdev);
+         }
++        if (loop_slots) {
++            return test_loop_slots(seed, stdev);
++        }
+         return test_backends(arch_filter, seed, stdev, verbosity, target_backend);
+     } catch (const std::exception & err) {
+         fprintf(stderr, "encountered runtime error: %s\n", err.what());

@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 04:02:23 +0100
+Subject: [PATCH 6/8] tests : cover pass 3 and single projections in the slot
+ test
+
+---
+ tests/test-llama-archs.cpp | 93 ++++++++++++++++++++++----------------
+ 1 file changed, 54 insertions(+), 39 deletions(-)
+
+diff --git a/tests/test-llama-archs.cpp b/tests/test-llama-archs.cpp
+index 20aae5d4c..cef67bb99 100644
+--- a/tests/test-llama-archs.cpp
++++ b/tests/test-llama-archs.cpp
+@@ -64,19 +64,23 @@ static struct {
+     bool  weights = false;
+ } g_expert_rescale;
+ 
+-// --loop-slots: fills the routed experts of one cache slot with the values of its physical layer
++// --loop-slots: fills the routed experts of the listed cache slots with the values of their physical layer
+ static struct {
+-    std::string slot; // e.g. "blk.3."
+-    std::string phys; // e.g. "blk.1."
++    std::vector<std::string> slots; // e.g. "blk.3."
++    std::string phys;               // e.g. "blk.1."
+ } g_slot_alias;
+ 
+ static std::string fill_key(const char * name) {
+     const std::string s = name;
+-    if (g_slot_alias.slot.empty() || s.rfind(g_slot_alias.slot, 0) != 0 ||
+-        (s.find(".ffn_gate_up_exps.") == std::string::npos && s.find(".ffn_down_exps.") == std::string::npos)) {
++    if (s.find(".ffn_gate_up_exps.") == std::string::npos && s.find(".ffn_down_exps.") == std::string::npos) {
+         return s;
+     }
+-    return g_slot_alias.phys + s.substr(g_slot_alias.slot.size());
++    for (const std::string & slot : g_slot_alias.slots) {
++        if (s.rfind(slot, 0) == 0) {
++            return g_slot_alias.phys + s.substr(slot.size());
++        }
++    }
++    return s;
+ }
+ 
+ static void apply_expert_rescale(std::vector<float> & dst, const char * name) {
+@@ -1991,29 +1995,28 @@ static int test_loop_scales(const size_t seed, const float stdev) {
+     return ok_folded && ok_scaled && ok_unused ? 0 : 1;
+ }
+ 
+-// A cache slot may carry its own routed experts, used only by its pass. With the slot's tensors filled with
+-// the values of its physical layer the logits must not change; with other values, or a rescaled slot scale,
+-// they must, which shows that the second pass reads the slot's tensors and scales.
++// A cache slot may carry its own routed experts, used only by its pass. The fixture runs the core (physical layer 1)
++// three times, so slot 3 is pass 2 and slot 4 is pass 3. Slot tensors holding their physical layer's values must not
++// change the logits, for both projections and for one alone; other values in either pass or either projection, or a
++// rescaled slot scale, must change them, and the two passes and the two projections must differ from each other.
+ static int test_loop_slots(const size_t seed, const float stdev) {
+     const llm_arch arch = LLM_ARCH_INKLING2_LOOP;
+     const std::vector<llama_token> tokens = get_tokens(32, 128, seed);
+ 
+-    auto logits_for = [&](bool slot_tensors, bool alias, int rescale_layer) {
+-        g_slot_alias.slot = alias ? "blk.3." : "";
+-        g_slot_alias.phys = alias ? "blk.1." : "";
++    auto logits_for = [&](const std::vector<std::string> & slot_tensors, const std::vector<std::string> & aliased, int rescale_layer) {
++        g_slot_alias.slots = aliased;
++        g_slot_alias.phys  = "blk.1.";
+         g_expert_rescale.layer   = rescale_layer;
+         g_expert_rescale.factor  = 2.0f;
+         g_expert_rescale.weights = false;
+         gguf_context_ptr gguf_ctx = get_gguf_ctx(arch, /*moe =*/ true);
+-        if (slot_tensors) {
+-            // the slot of the second pass over the core (physical layer 1), see get_gguf_ctx
+-            for (const char * name : { "blk.3.ffn_gate_up_exps.weight", "blk.3.ffn_down_exps.weight" }) {
+-                ggml_tensor t;
+-                memset(&t, 0, sizeof(ggml_tensor));
+-                t.type = GGML_TYPE_F32;
+-                ggml_set_name(&t, name);
+-                gguf_add_tensor(gguf_ctx.get(), &t);
+-            }
++        gguf_set_val_u32(gguf_ctx.get(), llama_arch_kv_name(arch, LLM_KV_LOOP_COUNT).c_str(), 3);
++        for (const std::string & name : slot_tensors) {
++            ggml_tensor t;
++            memset(&t, 0, sizeof(ggml_tensor));
++            t.type = GGML_TYPE_F32;
++            ggml_set_name(&t, name.c_str());
++            gguf_add_tensor(gguf_ctx.get(), &t);
+         }
+         auto model_ctx = get_model_and_ctx(gguf_ctx.get(), nullptr, seed, stdev, {});
+         g_slot_alias = {};
+@@ -2021,24 +2024,36 @@ static int test_loop_slots(const size_t seed, const float stdev) {
+         return get_logits(model_ctx.first.get(), model_ctx.second.get(), tokens);
+     };
+ 
+-    const std::vector<float> ref    = logits_for(false, false, -1);
+-    const std::vector<float> same   = logits_for(true,  true,  -1); // slot holds the physical values: must match ref
+-    const std::vector<float> own    = logits_for(true,  false, -1); // slot holds other values: must differ
+-    const std::vector<float> scaled = logits_for(true,  true,   3); // slot scale doubled: must differ
+-
+-    const double e_same   = nmse(ref, same);
+-    const double e_own    = nmse(ref, own);
+-    const double e_scaled = nmse(ref, scaled);
+-
+-    const bool ok_same   = e_same   == 0.0;
+-    const bool ok_own    = e_own    >  0.0;
+-    const bool ok_scaled = e_scaled >  0.0;
+-
+-    LOG("loop-slots: slot blk.3 = physical values:   nmse %.3e (%s)\n", e_same,   ok_same   ? "OK" : "FAIL");
+-    LOG("loop-slots: slot blk.3 = own values:        nmse %.3e (%s)\n", e_own,    ok_own    ? "OK" : "FAIL, slot tensors unused");
+-    LOG("loop-slots: slot blk.3 scale*2:             nmse %.3e (%s)\n", e_scaled, ok_scaled ? "OK" : "FAIL, slot scale unused");
+-
+-    return ok_same && ok_own && ok_scaled ? 0 : 1;
++    const std::string gu3 = "blk.3.ffn_gate_up_exps.weight", dn3 = "blk.3.ffn_down_exps.weight";
++    const std::string gu4 = "blk.4.ffn_gate_up_exps.weight", dn4 = "blk.4.ffn_down_exps.weight";
++
++    const std::vector<float> ref     = logits_for({},                   {},                   -1);
++    const std::vector<float> same    = logits_for({gu3, dn3, gu4, dn4}, {"blk.3.", "blk.4."}, -1);
++    const std::vector<float> same_gu = logits_for({gu3},                {"blk.3."},           -1);
++    const std::vector<float> own2    = logits_for({gu3, dn3},           {},                   -1);
++    const std::vector<float> own3    = logits_for({gu4, dn4},           {},                   -1);
++    const std::vector<float> own_gu  = logits_for({gu3},                {},                   -1);
++    const std::vector<float> own_dn  = logits_for({dn3},                {},                   -1);
++    const std::vector<float> scaled  = logits_for({gu4, dn4},           {"blk.4."},            4);
++
++    struct check { const char * what; double e; bool ok; };
++    const check checks[] = {
++        { "slots 3, 4 = physical values      ", nmse(ref, same),     nmse(ref, same)     == 0.0 },
++        { "slot 3 gate_up only = physical    ", nmse(ref, same_gu),  nmse(ref, same_gu)  == 0.0 },
++        { "slot 3 (pass 2) own values        ", nmse(ref, own2),     nmse(ref, own2)     >  0.0 },
++        { "slot 4 (pass 3) own values        ", nmse(ref, own3),     nmse(ref, own3)     >  0.0 },
++        { "pass 2 and pass 3 slots differ    ", nmse(own2, own3),    nmse(own2, own3)    >  0.0 },
++        { "slot 3 own gate_up only           ", nmse(ref, own_gu),   nmse(ref, own_gu)   >  0.0 },
++        { "slot 3 own down only              ", nmse(ref, own_dn),   nmse(ref, own_dn)   >  0.0 },
++        { "gate_up-only and down-only differ ", nmse(own_gu, own_dn), nmse(own_gu, own_dn) > 0.0 },
++        { "slot 4 scale*2                    ", nmse(ref, scaled),   nmse(ref, scaled)   >  0.0 },
++    };
++    bool ok = true;
++    for (const check & c : checks) {
++        LOG("loop-slots: %s nmse %.3e (%s)\n", c.what, c.e, c.ok ? "OK" : "FAIL");
++        ok = ok && c.ok;
++    }
++    return ok ? 0 : 1;
+ }
+ 
+ int main(int argc, char ** argv) {

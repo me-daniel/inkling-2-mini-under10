@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: me-daniel <63238224+me-daniel@users.noreply.github.com>
+Date: Sat, 21 Nov 2026 04:02:23 +0100
+Subject: [PATCH 5/8] model : inkling2_loop find slot experts in every split
+
+---
+ src/models/inkling2-loop.cpp | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/src/models/inkling2-loop.cpp b/src/models/inkling2-loop.cpp
+index 29b493886..929b90640 100644
+--- a/src/models/inkling2-loop.cpp
++++ b/src/models/inkling2-loop.cpp
+@@ -66,21 +66,25 @@ void llama_model_inkling2_loop::load_arch_tensors(llama_model_loader & ml) {
+         layers[il] = layers[layer_phys(il)];
+     }
+ 
+-    // a slot may carry its own routed experts (e.g. blk.30.ffn_down_exps for pass 2 over layer 6), used only by that pass;
+-    // they are created only when listed in the file, and their scales are left to the generic scale pass
++    // a slot may carry its own routed experts (e.g. blk.24.ffn_down_exps for pass 2 over layer 6 when core_start = 6),
++    // used only by that pass; they are created only when the file has them, and their scales are left to the generic scale pass
+     const int n_slot = (int) hparams.n_layer() - n_phys;
+     slot_own_gate_up.assign(n_slot, 0);
+     slot_own_down.assign(n_slot, 0);
++    // weights_map indexes every split of a real file; a metadata-only model lists its tensors in the metadata
++    auto listed = [&](const std::string & name) {
++        return ml.get_tensor_meta(name.c_str()) != nullptr || (ml.files.empty() && gguf_find_tensor(ml.metadata, name.c_str()) >= 0);
++    };
+     const int64_t n_expert = hparams.n_expert;
+     for (int il = n_phys; il < (int) hparams.n_layer(); ++il) {
+         const int64_t n_ff_exp = hparams.n_ff_exp(il);
+         auto & layer = layers[il];
+-        if (gguf_find_tensor(ml.metadata, tn(LLM_TENSOR_FFN_GATE_UP_EXPS, "weight", il).str().c_str()) >= 0) {
++        if (listed(tn(LLM_TENSOR_FFN_GATE_UP_EXPS, "weight", il).str())) {
+             layer.ffn_gate_up_exps = create_tensor(tn(LLM_TENSOR_FFN_GATE_UP_EXPS, "weight", il), {n_embd, 2*n_ff_exp, n_expert}, 0);
+             layer.ffn_up_exps_s    = nullptr;
+             slot_own_gate_up[il - n_phys] = 1;
+         }
+-        if (gguf_find_tensor(ml.metadata, tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il).str().c_str()) >= 0) {
++        if (listed(tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il).str())) {
+             layer.ffn_down_exps   = create_tensor(tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il), {n_ff_exp, n_embd, n_expert}, 0);
+             layer.ffn_down_exps_s = nullptr;
+             slot_own_down[il - n_phys] = 1;
