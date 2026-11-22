@@ -13,6 +13,7 @@ import json; m = json.load(open('$ROOT/configs/m0rk.json'))
 m['down'] = {k: ('q2t$g' if v == 'q2u' else v) for k, v in m['down'].items()}
 json.dump(m, open('$ROOT/configs/m0rk-g$g.json', 'w'))"
 done
+until ! pgrep -f "scripts/m0rk-udne[.]sh" >/dev/null && [ -f "$L/ppl-m0rk-udne-S.log" ]; do sleep 30; done  # GPU order
 for g in 93 107; do
     out="$M/tmp/m0rk-g$g.gguf"; [ -f "$out" ] || { cpu_take; $PY "$ROOT/scripts/assemble.py" "$ROOT/configs/m0rk-g$g.json" "$out"; cpu_give; }
     score "m0rk-g$g-S" "$out" S; rm -f "$out"
