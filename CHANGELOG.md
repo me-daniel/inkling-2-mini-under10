@@ -195,3 +195,14 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - concept-v2 and the 14:20 entry applied "must clearly beat UD" to our own encodings. The policy (Daniel, 22 Nov) applies that bar to derivative builds that carry others' tensors. An own encoding needs no win over UD. The sibling's v1 went public on its Mac track (lowest KL among all-Metal files under its size) after failing its UD gate.
 - Consequence: M0rk (8.49 GB, all-Metal, own encoding) is a possible release on the same frame, if it is the closest-to-original all-Metal file at or under its size. That still needs the remaining comparators and a speed run. Daniel decides.
 - New tier under study: <= 9,138,715,328 B (UD-Q2_K_XL). UD-Q2_K_XL's header: 11 NVFP4 down tensors (2.10 GB) plus 1 MXFP4; gate_up IQ2_S in 11 layers (9, 11, 15-23).
+
+## 22 Nov 2026, 15:40: concept v3 (16 GB Mac file, sized by measurement)
+
+- Reviews of the 9 GB draft: Fable, Astra and Sol (`reviews/2026-11-22-*-9gb-*.md`); census of 27 same-model GGUFs at 7.5-9.6 GB (`results/landscape-7.5-9.6GB.md`); literature pass (`reviews/2026-11-22-research-levers-sonnet.md`). No model run.
+- New facts:
+  - Stock Metal rejects only NVFP4, TQ1_0 and F8_E4M3 for mul_mat (upstream c66103334).
+  - Upstream 690b87d fixes the pass-2/3 scales for UD files.
+  - The only unscored all-Metal competitor at 8.67-9.14 GB is GSQ-RCO-IQ2_XS (8,949,801,504 B).
+  - Exact promotion costs per layer: down Q2_0→IQ4_NL +95,551,488 B; gate_up IQ1_S→IQ2_XXS +42,467,328 B, IQ2_XXS→IQ2_XS and IQ2_XS→IQ2_S +21,233,664 B each, IQ2_S→IQ3_XXS +42,467,328 B.
+- Open conflict: PLAN.md's measured 2.4 GB at 16K (cap about 9.05 GB) against Sol's KV-only estimate of 0.5-1.3 GiB at 8K-32K. Step 2 measures it.
+- Plan: M0rk as base, equal-byte promotions ranked by KL per byte, per-block gain sweep, refiner pilot. GPU steps wait for windows the sibling grants.
