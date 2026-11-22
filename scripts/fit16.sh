@@ -4,13 +4,14 @@
 # and compared with 11,453 MB (recommendedMaxWorkingSetSize of a 16 GB Mac). -> results/fit16-<name>.txt
 set -eu
 . "$(dirname "$0")/lib.sh"
+trap 'gpu_done; cpu_give' EXIT
 R="$ROOT/results"
 for spec in "cand:$CAND" "UD-IQ2_XXS:$M/ext/UD-IQ2_XXS.gguf"; do
     name=${spec%%:*}; f=${spec#*:}; out="$R/fit16-$name.txt"; [ -f "$out" ] && continue
-    gpu_wait; step "bench $name"
+    cpu_take; gpu_wait; step "bench $name"  # both locks: timings need an otherwise idle machine
     "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -d 0,16384 -r 2 -o md > "$out.part" 2> "$L/bench-$name.log"
     /usr/bin/time -l "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -d 16384 -r 1 -o md > "$L/memory-$name.out" 2> "$L/memory-$name.log"
-    gpu_done
+    gpu_done; cpu_give
     {
         grep -E "maximum resident set size|peak memory footprint" "$L/memory-$name.log"
         grep -E "buffer size" "$L/memory-$name.log" | sed 's/^[^a-zA-Z]*//' | sort -u

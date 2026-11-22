@@ -82,3 +82,11 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - X5 (X2 with q2opt down rescaled per row to gain 1 at UD's 17 Q2_0 slots) 0.07460 on S: X5 - X2 +0.00333 [+0.00217, +0.00442]; X5 - UD +0.00396 [+0.00267, +0.00524]. **Fails.** Against the nearly identical build with raw q2opt down (m0-udgu-udne, 0.07486) de-attenuation buys about 0.0003. So attenuation explains the refit failure (gain 0.79 at IQ1_S), but not our Q2_0 down gap to UD (UD itself runs at gain 0.91).
 - m0-udgu-udne (UD's gate_up and UD's own non-expert tensors, our down): 0.07486. Splits the 0.01051 rest of the M0 gap: non-expert encoding 0.00629 [0.00578, 0.00679] (m0-udgu - m0-udgu-udne), down encoding 0.00422 [0.00292, 0.00549] (m0-udgu-udne - UD), of which about 0.0006 is IQ4_NL vs NVFP4 (X2).
 - Full M0 gap to UD, 0.02727: gate_up 0.01676 (61%), non-expert 0.00629 (23%), down 0.00422 (15%). UD's encodings beat ours in every tensor class at equal types; no tested encoder of ours closes any part of it.
+
+## 2026-11-22, 08:20: M0u result; X6 registered (before its data)
+
+- M0u (M0 with q2opt down rescaled per row to gain 1 at its 17 Q2_0 slots; codes unchanged): 0.09093 on S, M0u - M0 -0.00698 [-0.00831, -0.00560]. The first encoding change of ours that helps: de-attenuating our down projections closes about a quarter of the M0 gap (M0u - UD still +0.02029 [+0.01834, +0.02224]). Inside UD's file the same fix bought about 0.0003 (X5), so the effect depends on what else in the file attenuates.
+- UD's own tensors attenuate too: gain 0.91 (Q2_0 down, layers 0 and 12) and 0.95-1.00 (gate_up). Test X6, on X2 with codes unchanged and each output row's block scales multiplied by 1/gain (gain against BF16, with UD's per-expert .scale kept):
+  - X6d: UD's 17 Q2_0 down projections rescaled.
+  - X6dg: X6d plus all 24 gate_up tensors (UD's) rescaled.
+- Reading: each vs X2 and vs UD on S, paired. A candidate only if it beats UD with the paired CI below zero; then G4 on T1 and T2 (T2 with the sign rule) before any claim.
