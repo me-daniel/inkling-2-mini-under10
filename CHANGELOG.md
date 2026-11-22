@@ -228,3 +228,20 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - llama.cpp discussion #31320 (Marco-Nano-Instruct, 8B MoE, 232 experts; self-report). It trains only the block scales with codes frozen, against forward KL to bf16 on 24-50M tokens. Output is the same stock types. KL vs llama.cpp's imatrix files: IQ3_S 0.0277 vs 0.0353, IQ2_S 0.0566 vs 0.0963, IQ2_XXS 0.0914 vs 0.173. Not stated: optimizer, hardware, wall time, calibration domain, code URL.
 - Bearing: the strongest outside evidence that scale-only fits in stock IQ types carry large KL gains, and it supports our refit direction. End-to-end training of a 26B model over tens of millions of tokens does not fit a 48 GB Mac without a GPU in days (inferred). A middle path would fit scales per layer against the layer output on captured inputs (local, like ours, but with the trained loss). Parked until steps 3-4 report.
 - Also relayed: MACaQ (arXiv 2611.10649 v2) Appendix C publishes full-Hessian codes-only IQ3_S / IQ3_XXS search, so any write-up of code refinement cites it. hridya423 mixB pads down rows to 1280 and needs a fork, so it is not a comparator.
+
+## 23 Nov 2026, 00:55: step 2 memory (measured) and the size cap
+
+- `/usr/bin/time -l` around one `llama-bench -ngl 99 -p 512 -n 128 -d D -r 1` (flash attention auto, f16 KV), build fcaddf97a. Run with the GPU lock only, beside the sibling's refiner, so the tg numbers at depth are not clean speed numbers (bench2 later).
+
+  | file | bytes | depth | max RSS | peak footprint | tg128 at depth |
+  |---|---|---|---|---|---|
+  | M0rk | 8,486,214,944 | 8K | 8,880,635,904 | 1,460,346,512 | 24.08 |
+  | M0rk | 8,486,214,944 | 16K | 10,911,596,544 | 2,477,122,008 | 21.56 |
+  | M0rk | 8,486,214,944 | 32K | 11,984,437,248 | 3,515,262,168 | 18.14 |
+  | GSQ-RCO-IQ2_XS | 8,949,801,504 | 16K | 10,577,281,024 | 2,478,007,032 | 20.15 |
+  | UD-IQ2_XXS | 8,486,237,632 | 16K | 10,384,900,096 | 2,574,426,680 | 14.99 |
+  | UD-Q2_K_XL | 9,138,716,608 | 16K | 11,272,552,448 | 2,573,968,336 | 13.21 |
+
+- Reading: peak footprint (memory not backed by the model file: KV, compute and scratch) is the same for all-Metal files of this model at a given depth, 2.48 GB at 16K. It grows about 1.03 GB per extra 8K-16K of context. Max RSS counts only touched pages of the mapped weights, so it is not comparable across files.
+- Size cap by the pre-registered rule (weights plus M0rk's measured 16K overhead under 11,453,250,000 B): 11,453,250,000 - 2,477,122,008 = **8,976,127,992 B**. Headroom over M0rk: 489,913,048 B. GSQ-RCO-IQ2_XS (8,949,801,504 B) is under it. UD-Q2_K_XL is 162,588,616 B over, but 2.10 GB of its weights run on the CPU, so the GPU budget does not bind it the same way (it uses about 11.71 GB of system memory at 16K, inferred from bytes plus footprint).
+- At 32K, M0rk needs about 12.0 GB (8.49 + 3.52), over the default GPU budget. So the 16 GB claim is 16K, not 32K.

@@ -1,0 +1,6 @@
+| model                          |       size |     params | backend    | threads |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
+| inkling2_loop ?B IQ4_NL - 4.5 bpw |   8.32 GiB |    26.07 B | MTL,BLAS   |       5 |  pp512 @ d16384 |        134.96 ± 0.00 |
+| inkling2_loop ?B IQ4_NL - 4.5 bpw |   8.32 GiB |    26.07 B | MTL,BLAS   |       5 |  tg128 @ d16384 |         20.15 ± 0.00 |
+
+build: fcaddf97a (9)
