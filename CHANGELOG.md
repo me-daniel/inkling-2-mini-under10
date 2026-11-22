@@ -122,3 +122,7 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - ggml-org's imatrix has no entry for output.weight or token_embd. So our IQ4_XS output head was quantized without importance weights. UD's was most likely weighted, and the output head feeds the logits directly.
 - Test M0rko: an imatrix with `--process-output` (cand.gguf forward, 160 chunks of calib-fit), the non-expert pool requantized with it at UD's types (ne-ud2), then M0rko = M0rk with ne-ud2. Reading: M0rko vs M0rk on S, paired. Own encodings only.
 - Order: the sibling's two runs first, then M0rko (own path), then the X6 diagnostics.
+
+## 2026-11-22, 11:30: M0rko result
+
+- M0rko (non-expert pool requantized with an imatrix that covers output.weight): 0.08749, M0rko - M0rk +0.00036 [-0.00009, +0.00084]. Neutral. Importance weighting of the IQ4_XS output head is not the non-expert lever.
