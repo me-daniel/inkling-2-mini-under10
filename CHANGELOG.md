@@ -222,3 +222,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - p-g1318: gate_up 13 and 18 IQ2_XXS -> IQ2_S (gu-iq2_s, refit plus gain restore), +84,934,656 B.
   - p-g2023: gate_up 20 and 23 IQ2_S -> IQ3_XXS (pool-3bit, plain; meanfit has no IQ3_XXS), +84,934,656 B.
   - Rank by (KL change) / (bytes added). Combine the promotions whose CI is below 0, best ratio first, up to the cap, and verify the combination on S. Stop rule: if none of the five has a CI below 0, step 3 ends and the candidate stays M0rk.
+
+## 22 Nov 2026, 20:50: outside evidence on scale training (relayed by the sibling, source read)
+
+- llama.cpp discussion #31320 (Marco-Nano-Instruct, 8B MoE, 232 experts; self-report). It trains only the block scales with codes frozen, against forward KL to bf16 on 24-50M tokens. Output is the same stock types. KL vs llama.cpp's imatrix files: IQ3_S 0.0277 vs 0.0353, IQ2_S 0.0566 vs 0.0963, IQ2_XXS 0.0914 vs 0.173. Not stated: optimizer, hardware, wall time, calibration domain, code URL.
+- Bearing: the strongest outside evidence that scale-only fits in stock IQ types carry large KL gains, and it supports our refit direction. End-to-end training of a 26B model over tens of millions of tokens does not fit a 48 GB Mac without a GPU in days (inferred). A middle path would fit scales per layer against the layer output on captured inputs (local, like ours, but with the trained loss). Parked until steps 3-4 report.
+- Also relayed: MACaQ (arXiv 2611.10649 v2) Appendix C publishes full-Hessian codes-only IQ3_S / IQ3_XXS search, so any write-up of code refinement cites it. hridya423 mixB pads down rows to 1280 and needs a fork, so it is not a comparator.
