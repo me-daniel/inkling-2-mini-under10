@@ -105,3 +105,13 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - M0uu (M0u plus our gate_up and IQ4_NL down rescaled to gain 1): 0.09231, M0uu - M0u +0.00138 [+0.00076, +0.00198]. **Worse.** Gain 1 is not a universal target. For Q2_0 down (gain about 0.86, linear into the residual) it helped (M0u -0.00698). For gate_up (gain 0.94-0.99, into SwiGLU) it overshoots: energy goes from about 1.14 to 1.28 at IQ1_S.
 - M0rg (refit gate_up rescaled to gain 1) is replaced, before any of its data, by M0rk: the refit gate_up rescaled per row back to llama-quantize's own per-row gain (the gain constraint), on M0u. Reading: M0rk vs M0u on S, paired. Its GPU score runs only after the sibling's two priority runs.
+
+## 2026-11-22, 11:00: M0rk result, best own file
+
+- M0rk (M0u with the mean-aware gate_up refit rescaled per row back to llama-quantize's per-row gain): **0.08713** on S.
+  - M0rk - M0u -0.00380 [-0.00451, -0.00313].
+  - M0rk - M0 -0.01078 [-0.01193, -0.00960]: 40% of the 0.02727 gap to UD closed with our own encoders only.
+  - M0rk - (M0 with UD's gate_up) +0.00598 [+0.00443, +0.00759]: our gate_up now closes 64% of UD's gate_up share (0.01676).
+  - M0rk - UD +0.01649 [+0.01463, +0.01820].
+- Reading: the refit's lower full-Gram error was real. M0r lost only through attenuation, and restoring the reference gain keeps the gain in error and drops the harm. Rule for every encoder here: minimise output error with the row gain held at the reference encoder's.
+- Sibling's cand-u (their v1 rescaled to gain 1): -0.00034 [-0.00068, +0.00003], neutral. Their file barely attenuates (IQ4_NL down at 0.996).
