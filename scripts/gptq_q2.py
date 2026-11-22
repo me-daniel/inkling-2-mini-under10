@@ -123,7 +123,7 @@ def main() -> None:
     ap.add_argument("--grams", type=Path, nargs="+", required=True, help="the capture dir holding this layer's Gram")
     ap.add_argument("--kind", default="ffn_down_exps")
     ap.add_argument("--mode", choices=["gptq", "diag"], default="gptq")
-    ap.add_argument("--alpha", type=float, default=1.0)
+    ap.add_argument("--alpha", type=float, required=True)
     ap.add_argument("--damp", type=float, default=0.01)
     ap.add_argument("--min-rows", type=int, default=256)
     ap.add_argument("--device", default="mps" if torch.backends.mps.is_available() else "cpu")
@@ -137,7 +137,7 @@ def main() -> None:
     w = np.ascontiguousarray(w.reshape(E, -1, w.shape[-1]), dtype=np.float32)
     gdir = next(d for d in args.grams if (d / f"{name}.gram.f32").exists())
     gram, n = load_gram(gdir, name, E, w.shape[2])
-    diag = np.einsum("eii->ei", gram)
+    diag = np.einsum("eii->ei", gram).copy()  # einsum returns a VIEW: without the copy, zeroing gram zeroed diag too
     few = n < args.min_rows
     if args.mode == "diag":
         few[:] = True

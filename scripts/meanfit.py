@@ -99,7 +99,7 @@ def refit_expert(t: Q, blocks: np.ndarray, w: np.ndarray, v: np.ndarray, m: np.n
             delta = dd[:, j] * (f(best_l) - f(ls[:, j]))
             g = g + P[:, j] * delta; s[:, j] = s[:, j] + delta; ls[:, j] = best_l
     e0, e1 = err(sig0) + const, err(dd * f(ls)) + const
-    keep = e1 > e0                                                                        # never worse than llama-quantize
+    keep = e1 >= e0                                                                       # keep llama-quantize's bits unless strictly better
     ls = np.where(keep[:, None], ls0.reshape(R, -1), ls)
     e1 = np.where(keep, e0, e1)
     new = set_ls(t, blocks, ls.reshape(len(blocks), nsub))

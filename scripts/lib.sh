@@ -13,8 +13,7 @@ gpu_wait() {
             pid=$(awk '{print $1}' "$LOCK" 2>/dev/null || true)
             case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null || { rm -f "$LOCK"; continue; } ;; esac
         elif ! pgrep -x llama-bench > /dev/null && (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$LOCK") 2>/dev/null; then
-            trap 'gpu_done' EXIT INT TERM
-            return 0
+            return 0  # callers own their traps (a trap here replaced theirs and dropped cpu_give)
         fi
         sleep 20
     done
@@ -26,7 +25,8 @@ score() { # name model set [extra...]
     name=$1 model=$2 set=$3; shift 3
     log="$L/ppl-$name.log"
     # a cached log counts only for the same model file (path, size, mtime) and with every chunk finite
-    sig="$(cd "$(dirname "$model")" && pwd -P)/$(basename "$model") $(stat -L -f '%z %m' "$model") $set $*"
+    ref="$SIB/models/logits/ref-$set-P3.kld"
+    sig="$(cd "$(dirname "$model")" && pwd -P)/$(basename "$model") $(stat -L -f '%z %m' "$model") $set $* ref $(stat -L -f '%z %m' "$ref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
     if [ -f "$log" ] && grep -q 'Mean *KLD' "$log" && [ "$(cat "$log.sig" 2>/dev/null)" = "$sig" ] && ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$log"; then return 0; fi
     gpu_wait; step "score $name"
     ctx=4096; [ "$set" = T2 ] && ctx=2048

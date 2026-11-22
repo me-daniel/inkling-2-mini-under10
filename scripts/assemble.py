@@ -36,7 +36,8 @@ GATE_UP = {"iq3_xxs": SM / "pool-3bit.gguf", "iq2_xxs": SM / "pool-2bit.gguf", "
 UD_SCALE = "ffn_gate_up_exps.scale"
 DOWN = {"iq4_nl": lambda l: SM / "pool-3bit.gguf", "q2opt": lambda l: SM / f"q2opt/L{l}.gguf",
         "diag": lambda l: M / f"down/diag-L{l}.gguf", "gptq": lambda l: M / f"down/gptq-L{l}.gguf"}
-NE = {"ud": M / "pools/ne-ud.gguf", "q8_0": SM / "pool-3bit.gguf", "q6_k": SM / "cand.gguf", "q5_k": M / "pools/ne-q5.gguf", "q4_k": M / "pools/ne-q4.gguf"}
+NE = {"udfile": M / "ext/mainline/UD-IQ2_XXS.gguf",  # Unsloth's own non-expert tensors (same names in mainline layout)
+      "ud": M / "pools/ne-ud.gguf", "q8_0": SM / "pool-3bit.gguf", "q6_k": SM / "cand.gguf", "q5_k": M / "pools/ne-q5.gguf", "q4_k": M / "pools/ne-q4.gguf"}
 NE_RE = {"all": r"^(?!.*_exps\.)",  # every non-expert tensor (never a .scale of an expert)
          "attn": rf"^blk\.\d+\.{ATT}", "embd": r"^token_embd\.weight$", "out": r"^output\.weight$"}
 
@@ -112,7 +113,7 @@ def main() -> None:
         cmd += ["--take", str(donor), rx]
     for donor, rx in adds:
         cmd += ["--add", str(donor), rx]
-    subprocess.run(cmd + ["--verify"], check=True, stdout=open(args.out + ".json", "w"))
+    subprocess.run(cmd + ["--verify"], check=True, stdout=open(args.out + ".splice.log", "w"))
     real = Path(args.out).stat().st_size
     print(f"built {args.out}: {real:,} bytes (predicted {size:,})")
     if real > LIMIT and not args.over:

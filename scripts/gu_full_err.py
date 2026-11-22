@@ -21,12 +21,12 @@ for arg in sys.argv[3:]:
 num = np.zeros((len(enc), E)); bias = np.zeros((len(enc), E)); den = np.zeros(E)
 for e in range(E):
     G = np.triu(g[e]).astype(np.float64); G = G + np.triu(G, 1).T
-    w = W[e].astype(np.float64); den[e] = np.einsum("rc,cd,rd->", w, G, w)
+    w = W[e].astype(np.float64); den[e] = np.sum((w @ G) * w)  # BLAS, not a 3-operand einsum
     for k, (label, t, sc) in enumerate(enc):
         q = dequantize(np.asarray(t.data[e]), t.tensor_type).reshape(w.shape).astype(np.float64)
         if sc is not None: q = q * sc[e]
         dw = q - w
-        num[k, e] = np.einsum("rc,cd,rd->", dw, G, dw); bias[k, e] = cnt[e] * np.sum((dw @ mean[e]) ** 2)
+        num[k, e] = np.sum((dw @ G) * dw); bias[k, e] = cnt[e] * np.sum((dw @ mean[e]) ** 2)
 print("layer\tencoding\terr\tbias\twins_vs_first")
 for k, (label, t, _) in enumerate(enc):
     print(f"{L}\t{label} ({t.tensor_type.name})\t{num[k].sum() / den.sum():.5f}\t{bias[k].sum() / den.sum():.5f}\t{int((num[k] / den < num[0] / den).sum())}/128", flush=True)

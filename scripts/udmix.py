@@ -89,7 +89,7 @@ def main() -> None:
     if est > LIMIT + 4096 and not a.over:
         raise SystemExit("over the limit")
     subprocess.run([sys.executable, "-I", str(SIB / "scripts/splice.py"), str(SRC["UD2"]), a.out, *args, "--verify"],
-                   check=True, stdout=open(a.out + ".json", "w"))
+                   check=True, stdout=open(a.out + ".splice.log", "w"))
     real = Path(a.out).stat().st_size
     print(f"built {a.out}: {real:,} bytes")
     if real > LIMIT and not a.over:

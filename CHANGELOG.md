@@ -55,3 +55,13 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Partial: M0r in 0.0895-0.0959. A finding to write up; no release, no further GPU.
 - Strong: M0r at or below 0.0895 (half of the 0.01676 gate_up gap). Buys one follow-up: X2r = X2 with the same refit applied to UD's own gate_up. Release bar for X2r: at or below 0.0696 on S with the paired CI against UD below zero, then G4 on T1 and T2 as registered.
 - Labels fixed: the "S8" screens scored all 16 chunks (KL mode ignores --chunks). The scored UD file is the mainline rebuild, 8,486,237,632 bytes, sha256-identical to Unsloth's Mainline_Support file (results/ud-mainline-sha256.md); the byte limit stays the root file's 8,486,236,352. X2 vs UD compares Metal IQ4_NL with CPU-fallback NVFP4, so "+0.00063" reads as "equal to slightly worse" (the sibling measured backend noise up to +0.00040).
+
+## 2026-11-22, 06:50: audit corrections (Opus audit; every logged number reproduced from the logs)
+
+- **Bug:** `gptq_q2.py --mode diag` encoded with UNIFORM channel weights, not the Gram diagonal: `np.einsum("eii->ei", gram)` is a view, so zeroing the Gram zeroed the diagonal. Fixed (`.copy()`). Consequences:
+  - G2 compared GPTQ against unweighted rounding (not the matched control). GPTQ still lost (+0.00293), so the FAIL stands and is stronger.
+  - `results/bias-split*.tsv` "diag" rows are unweighted rounding. Against the real diag-weighted rounding (G1, in memory: 0.11444 at L12, 0.09879 at L0, held-out conversations), UD's own Q2_0 (0.12353, 0.10905) is WORSE. That opens a cheap test, registered here: X4 = X2 with our imatrix-weighted Q2_0 (q2opt, ggml-org imatrix) at UD's 17 Q2_0 down slots. An offline check on the S-text and WikiText Grams runs first; X4 counts as an improvement only if X4 - X2 < 0 on S with the CI below zero.
+- The two GPTQ v2 alpha rules disagreed (WikiText-only: 4.0; pooled: 1.0); X3 used the pooled 1.0 as registered at 05:10.
+- G4 on T2 (5 chunks): in addition to the bootstrap CI, all 5 per-chunk differences must favour the candidate (one-sided sign test p = 1/32), and leave-one-out is reported.
+- Fixed: the score cache key now includes the reference .kld and the binary; splice manifests no longer get overwritten; gpu_wait no longer replaces callers' traps; meanfit keeps llama-quantize's bits unless strictly better; gptq_q2 --alpha is now required.
+- Omitted earlier: m0-imat-mine (our capture imatrix at M0's map) vs M0: -0.00035 [-0.00116, +0.00048].

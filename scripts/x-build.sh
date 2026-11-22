@@ -19,7 +19,7 @@ build() { # name with-gptq(0/1)
     fi
     mem_wait; step "build $1"
     # shellcheck disable=SC2086
-    $PY "$SIB/scripts/splice.py" "$UD" "$out" $args --verify > "$out.json"
+    $PY "$SIB/scripts/splice.py" "$UD" "$out" $args --verify > "$out.splice.log"
     sz=$(stat -f %z "$out"); echo "$1: $sz bytes (limit $LIMIT)"
     [ "$sz" -le "$LIMIT" ] || { rm -f "$out"; echo "$1 over the limit, deleted"; exit 1; }
 }
