@@ -132,3 +132,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - All non-matrix tensors (norms, router, loop controls, convs, biases: 600+) are byte-identical between our pool and UD. Q8_0: identical codes in every block, d differs by about 1 fp16 ulp in 77% of blocks (UD's slightly worse vs BF16). So the 0.00629 non-expert share sits in the 60 lower-bit attention matrices (Q4_K-Q6_K, IQ3_XXS) and the IQ4_XS head and embedding.
 - On those 60, ours beats UD in plain and in diagonal-imatrix-weighted error in 60/60 (e.g. Q5_K 0.00122 vs 0.00150). UD's edge there is invisible to any diagonal metric. Candidate explanations: (a) a Hessian-aware (off-diagonal) encoder for attention, (b) joint tuning with UD's own expert tensors (the 0.00629 was measured with UD's gate_up in place).
 - Diagnostic m0rk-udne = M0rk with UD's non-expert tensors. Reading: m0rk-udne - M0rk near -0.006 means the share is real in our stack (then capture attention Grams to test (a)); much smaller means (b).
+
+## 2026-11-22, 11:55: X6d result; X6dg dropped
+
+- X6d (X2 with UD's own 17 Q2_0 downs rescaled per row from gain 0.88-0.91 to 1): 0.07312, X6d - X2 +0.00185 [+0.00119, +0.00248], X6d - UD +0.00248. Worse.
+- Reading: gain 1 is not the target. UD's Q2_0 sits at gain 0.90 / energy 0.94 and that is near its optimum. Our q2opt sat at 0.86 / 0.87, where the rescale to 1 helped (M0u). The right target is somewhere below 1, encoding-specific. The constraint that worked (M0rk) restores the reference encoder's own per-row gain.
+- X6dg (adds UD gate_up at gain 1) dropped before its data: both of its parts now predict harm (X6d here, gate_up at gain 1 in M0uu), and the GPU goes to the sibling's captures and m0rk-udne.
