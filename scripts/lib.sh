@@ -21,20 +21,20 @@ gpu_wait() {
 gpu_done() { [ -e "$LOCK" ] && [ "$(awk '{print $1}' "$LOCK")" = "$$" ] && rm -f "$LOCK"; return 0; }
 # score MODEL on SET (S, T1, T2) against the sibling's Q8_0 reference logits at P = 3 -> logs/ppl-NAME.log
 # extra args go to llama-perplexity (e.g. --chunks 8). Skips a run whose log already has a final KL.
-score() { # name model set [extra...]
-    name=$1 model=$2 set=$3; shift 3
-    log="$L/ppl-$name.log"
+score() { # name model set [extra...]; its variables are _s-prefixed so callers' loop variables survive
+    _sname=$1 _smodel=$2 _sset=$3; shift 3
+    _slog="$L/ppl-$_sname.log"
     # a cached log counts only for the same model file (path, size, mtime) and with every chunk finite
-    ref="$SIB/models/logits/ref-$set-P3.kld"
-    sig="$(cd "$(dirname "$model")" && pwd -P)/$(basename "$model") $(stat -L -f '%z %m' "$model") $set $* ref $(stat -L -f '%z %m' "$ref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
-    if [ -f "$log" ] && grep -q 'Mean *KLD' "$log" && [ "$(cat "$log.sig" 2>/dev/null)" = "$sig" ] && ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$log"; then return 0; fi
-    gpu_wait; step "score $name"
-    ctx=4096; [ "$set" = T2 ] && ctx=2048
-    "$BIN/llama-perplexity" -m "$model" -f "$ROOT/data/$set.txt" -c $ctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
-        --kl-divergence-base "$SIB/models/logits/ref-$set-P3.kld" --kl-divergence "$@" > "$log" 2>&1
+    _sref="$SIB/models/logits/ref-$_sset-P3.kld"
+    _ssig="$(cd "$(dirname "$_smodel")" && pwd -P)/$(basename "$_smodel") $(stat -L -f '%z %m' "$_smodel") $_sset $* ref $(stat -L -f '%z %m' "$_sref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
+    if [ -f "$_slog" ] && grep -q 'Mean *KLD' "$_slog" && [ "$(cat "$_slog.sig" 2>/dev/null)" = "$_ssig" ] && ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$_slog"; then return 0; fi
+    gpu_wait; step "score $_sname"
+    _sctx=4096; [ "$_sset" = T2 ] && _sctx=2048
+    "$BIN/llama-perplexity" -m "$_smodel" -f "$ROOT/data/$_sset.txt" -c $_sctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
+        --kl-divergence-base "$SIB/models/logits/ref-$_sset-P3.kld" --kl-divergence "$@" > "$_slog" 2>&1 || { gpu_done; echo "score $_sname FAILED, see $_slog"; return 1; }
     gpu_done
-    echo "$sig" > "$log.sig"
-    grep -E 'Mean +KLD|Same top p' "$log" | tr '\n' ' '; echo
+    echo "$_ssig" > "$_slog.sig"
+    grep -E 'Mean +KLD|Same top p' "$_slog" | tr '\n' ' '; echo
 }
 # CPU-heavy jobs (llama-quantize, GPTQ) hold 5-8 GB: start one only while at least 30% of memory is free
 mem_wait() { while [ "$(memory_pressure | awk '/free percentage/ {sub("%","",$5); print $5}')" -lt "${MEM_FREE:-30}" ]; do sleep 30; done; }

@@ -158,3 +158,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - `scripts/meanfit_q2.py` (closed-form mean-aware refit of the Q2_0 block scales, then gain restore to 1; tests/test_meanfit_q2.py checks it against a dense solve). Layer 0: surrogate error after/before 0.979, against 0.83 for gate_up at layer 6 (the M0rk lever, -0.00380 KL). The down inputs carry less mean energy (4-13% vs 16-27% for gate_up). The expected KL effect lies below the S noise, so no model run.
 - Own-path status: the remaining shares (gate_up about 0.006, down about 0.003 (X5), attention about 0.0025 (m0rk-udne)) are all code-level and invisible to diagonal metrics. They need full-Gram code refinement (the sibling's refine-codes.py), which is not feasible tonight at this size: other types, other Grams, and the CPU is committed to the sibling's v2r chain.
 - M0rk is frozen as the own-encoding candidate. G4 next (T1, T2 vs UD-IQ2_XXS, UD-IQ1_M, AD-IQ2_XXS-Q2; T2 sign rule), for the record.
+
+## 2026-11-22, 13:15: score() clobbered its caller's variables (fixed)
+
+- `score` in lib.sh assigned plain `name`, `model`, `set`, `log`, `ref`, `sig`, `ctx`. In `comparators.sh` with CAND, the loop variable `name` was overwritten after the T1 run, so the T2 run asked for `models/ext/final-UD-IQ2_XXS-T1-P3.gguf` and died at 12:53, leaving a stale GPU lock (removed). Fix: `score`'s variables are `_s`-prefixed, and a failed run releases the GPU lock and returns 1.
+- Earlier results unaffected: the only caller that reads one of these names after a `score` call is the CAND branch of comparators.sh, first run today. S comparator runs called `score` once per iteration.
