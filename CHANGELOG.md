@@ -65,3 +65,7 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - G4 on T2 (5 chunks): in addition to the bootstrap CI, all 5 per-chunk differences must favour the candidate (one-sided sign test p = 1/32), and leave-one-out is reported.
 - Fixed: the score cache key now includes the reference .kld and the binary; splice manifests no longer get overwritten; gpu_wait no longer replaces callers' traps; meanfit keeps llama-quantize's bits unless strictly better; gptq_q2 --alpha is now required.
 - Omitted earlier: m0-imat-mine (our capture imatrix at M0's map) vs M0: -0.00035 [-0.00116, +0.00048].
+
+## 2026-11-22, 07:00: M0r result
+
+- M0r (all 24 gate_up tensors of M0 with mean-aware scale refit; modeled error -19% to -26% per layer) scores 0.17029 on S; M0r - M0 = +0.07237 [+0.06723, +0.07730], top-1 83.18% vs 87.09%. **Dead** by the 06:40 rule; the refit line stops. Like GPTQ, a lower surrogate error (here diag(Var x) + m m^T from the imatrix, in sample) went with a much worse KL. The full-Gram check on layers 6 and 20 (sibling Grams) runs next to say whether the true input-Gram error rose too.
