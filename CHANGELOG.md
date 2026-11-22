@@ -163,3 +163,17 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - `score` in lib.sh assigned plain `name`, `model`, `set`, `log`, `ref`, `sig`, `ctx`. In `comparators.sh` with CAND, the loop variable `name` was overwritten after the T1 run, so the T2 run asked for `models/ext/final-UD-IQ2_XXS-T1-P3.gguf` and died at 12:53, leaving a stale GPU lock (removed). Fix: `score`'s variables are `_s`-prefixed, and a failed run releases the GPU lock and returns 1.
 - Earlier results unaffected: the only caller that reads one of these names after a `score` call is the CAND branch of comparators.sh, first run today. S comparator runs called `score` once per iteration.
+
+## 2026-11-22, 13:55: G4 on the frozen own-encoding candidate M0rk: FAIL vs Unsloth
+
+- M0rk (8,486,214,944 bytes, sha256 a62fd9cc49e9..., results/m0rk.sha256), paired vs each comparator (results/release-test.txt):
+
+  | vs | T1 diff [95% CI] | T2 diff [95% CI] |
+  |---|---|---|
+  | UD-IQ2_XXS (8,486,237,632 B) | +0.01424 [+0.01249, +0.01593] | +0.01662 [+0.01414, +0.01941] |
+  | UD-IQ1_M (8,024,442,304 B) | +0.00411 [+0.00193, +0.00616] | +0.01628 [+0.01464, +0.01829] |
+  | AD-IQ2_XXS-Q2 (7,900,679,776 B) | -0.04051 [-0.04712, -0.03499] | -0.02099 [-0.02523, -0.01776] |
+  | AD-IQ2_M (8,665,091,680 B, context) | -0.01555 [-0.01871, -0.01278] | -0.00822 [-0.01193, -0.00498] |
+
+- KL on T1 / T2: M0rk 0.08007 / 0.05934, UD-IQ2_XXS 0.06583 / 0.04272, UD-IQ1_M 0.07596 / 0.04306, AD-IQ2_XXS-Q2 0.12058 / 0.08033, AD-IQ2_M 0.09562 / 0.06756.
+- Reading: the S ranking holds on held-out text. Our own encoding beats both AtomicChat files (one of them larger than ours) and loses to both Unsloth files, including the 0.46 GB smaller UD-IQ1_M. No release candidate. Option (a): publish the findings.

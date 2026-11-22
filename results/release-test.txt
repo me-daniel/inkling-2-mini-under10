@@ -1,0 +1,7 @@
+T1 cand vs UD-IQ2_XXS: KL 0.08007 vs 0.06583, diff +0.01424 [+0.01249, +0.01593], top-1 88.68% vs 89.88% -> not better
+T1 cand vs UD-IQ1_M: KL 0.08007 vs 0.07596, diff +0.00411 [+0.00193, +0.00616], top-1 88.68% vs 89.46% -> not better
+T1 cand vs AD-IQ2_XXS-Q2: KL 0.08007 vs 0.12058, diff -0.04051 [-0.04712, -0.03499], top-1 88.68% vs 86.38% -> better
+T2 cand vs UD-IQ2_XXS: KL 0.05934 vs 0.04272, diff +0.01662 [+0.01414, +0.01941], top-1 91.44% vs 93.16% -> not better
+T2 cand vs UD-IQ1_M: KL 0.05934 vs 0.04306, diff +0.01628 [+0.01464, +0.01829], top-1 91.44% vs 93.29% -> not better
+T2 cand vs AD-IQ2_XXS-Q2: KL 0.05934 vs 0.08033, diff -0.02099 [-0.02523, -0.01776], top-1 91.44% vs 90.85% -> better
+quality gate: FAIL

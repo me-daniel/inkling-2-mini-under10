@@ -1,0 +1,2 @@
+T1 cand vs AD-IQ2_M: KL 0.08007 vs 0.09562, diff -0.01555 [-0.01871, -0.01278], top-1 88.68% vs 87.73% -> better
+T2 cand vs AD-IQ2_M: KL 0.05934 vs 0.06756, diff -0.00822 [-0.01193, -0.00498], top-1 91.44% vs 91.48% -> not better

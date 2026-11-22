@@ -16,5 +16,27 @@ KL against the sibling's Q8_0 reference at P = 3, S = 16 chunks x 4,096 tokens (
 | `m0-imat-bart-S` | M0 with gate_up re-encoded using bartowski's imatrix | 0.09800 | 87.09% | `m0-S` | +0.00009 [-0.00031, +0.00049] |
 | `m0-imat-mine-S` | M0 with gate_up re-encoded using our capture imatrix | 0.09756 | 87.21% | `m0-S` | -0.00035 [-0.00116, +0.00048] |
 | `m0r-S` | M0r: M0 with mean-aware scale refit of all gate_up tensors | 0.17028 | 83.18% | `m0-S` | +0.07237 [+0.06723, +0.07730] |
+| `x6d-S` | X6d: X2 with UD's own 17 Q2_0 downs rescaled to gain 1 | 0.07312 | 89.47% | `x2-S` | +0.00185 [+0.00119, +0.00248] |
+| `m0u-S` | M0u: M0 with q2opt down rescaled to gain 1 | 0.09093 | 87.79% | `m0-S` | -0.00698 [-0.00831, -0.00560] |
+| `m0uu-S` | M0uu: M0u plus our gate_up and IQ4_NL down at gain 1 | 0.09231 | 87.61% | `m0u-S` | +0.00138 [+0.00076, +0.00198] |
+| `m0rk-S` | M0rk: M0u plus mean-aware gate_up refit restored to llama-quantize's per-row gain (best own file) | 0.08713 | 87.91% | `m0u-S` | -0.00380 [-0.00451, -0.00313] |
+| `m0rk-g93-S` | M0rk with q2opt down at gain 0.93 | 0.08797 | 87.81% | `m0rk-S` | +0.00084 [+0.00012, +0.00157] |
+| `m0rk-g107-S` | M0rk with q2opt down at gain 1.07 | 0.08997 | 87.77% | `m0rk-S` | +0.00284 [+0.00218, +0.00347] |
+| `m0rko-S` | M0rk with non-expert tensors from an imatrix that covers the output head | 0.08749 | 87.90% | `m0rk-S` | +0.00036 [-0.00009, +0.00084] |
+| `m0rk-udne-S` | M0rk with UD's non-expert tensors (diagnostic) | 0.08467 | 88.11% | `m0rk-S` | -0.00246 [-0.00327, -0.00168] |
 | `g2-gptq-S` | G2: B3 down GPTQ-Q2_0 (M0 map, layer 17 Q2_0) | 0.10185 | 86.76% | `g2-diag-S` | +0.00293 [+0.00200, +0.00387] |
 | `g2-diag-S` | G2 control: B3 down uniform-weight rounding (the 'diag' bug, see CHANGELOG 06:50) | 0.09892 | 87.13% |  |  |
+
+## Held-out release test (G4) for M0rk
+
+```
+T1 cand vs UD-IQ2_XXS: KL 0.08007 vs 0.06583, diff +0.01424 [+0.01249, +0.01593], top-1 88.68% vs 89.88% -> not better
+T1 cand vs UD-IQ1_M: KL 0.08007 vs 0.07596, diff +0.00411 [+0.00193, +0.00616], top-1 88.68% vs 89.46% -> not better
+T1 cand vs AD-IQ2_XXS-Q2: KL 0.08007 vs 0.12058, diff -0.04051 [-0.04712, -0.03499], top-1 88.68% vs 86.38% -> better
+T2 cand vs UD-IQ2_XXS: KL 0.05934 vs 0.04272, diff +0.01662 [+0.01414, +0.01941], top-1 91.44% vs 93.16% -> not better
+T2 cand vs UD-IQ1_M: KL 0.05934 vs 0.04306, diff +0.01628 [+0.01464, +0.01829], top-1 91.44% vs 93.29% -> not better
+T2 cand vs AD-IQ2_XXS-Q2: KL 0.05934 vs 0.08033, diff -0.02099 [-0.02523, -0.01776], top-1 91.44% vs 90.85% -> better
+quality gate: FAIL
+T1 cand vs AD-IQ2_M: KL 0.08007 vs 0.09562, diff -0.01555 [-0.01871, -0.01278], top-1 88.68% vs 87.73% -> better
+T2 cand vs AD-IQ2_M: KL 0.05934 vs 0.06756, diff -0.00822 [-0.01193, -0.00498], top-1 91.44% vs 91.48% -> not better
+```

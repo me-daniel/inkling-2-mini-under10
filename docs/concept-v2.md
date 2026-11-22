@@ -1,46 +1,61 @@
-# Concept v2 (22 Nov 2026, after night 1)
+# Concept v2 (22 Nov 2026, after night 1 and the morning runs)
 
-Every number is on S (16 chunks, KL vs the Q8_0 reference at P = 3), paired over chunks. Source: `results/night1.md` (generated from the logs) and `CHANGELOG.md`.
+KL against the sibling's Q8_0 reference at P = 3. S is the selection set; T1 and T2 are held out. Differences are paired over chunks. Every number comes from `results/night1.md` (generated from the logs) or `CHANGELOG.md`.
+
+## Result
+
+No file of ours beats Unsloth. Our best own-encoding file, M0rk (8,486,214,944 bytes, all-Metal, stock-llama.cpp types), beats both AtomicChat files on both held-out sets and loses to both Unsloth files:
+
+| M0rk vs | T1 | T2 |
+|---|---|---|
+| UD-IQ2_XXS (Unsloth, 8.49 GB) | +0.01424 [+0.01249, +0.01593] | +0.01662 [+0.01414, +0.01941] |
+| UD-IQ1_M (Unsloth, 8.02 GB) | +0.00411 [+0.00193, +0.00616] | +0.01628 [+0.01464, +0.01829] |
+| AD-IQ2_XXS-Q2 (AtomicChat, 7.90 GB) | -0.04051 [-0.04712, -0.03499] | -0.02099 [-0.02523, -0.01776] |
+| AD-IQ2_M (AtomicChat, 8.67 GB, context) | -0.01555 [-0.01871, -0.01278] | -0.00822 [-0.01193, -0.00498] |
+
+Daniel's policy releases only our own encodings, and those that clearly beat UD. So there is no release. The default is option (a): publish the findings.
 
 ## What we achieved (measured)
 
-1. **Where the gap to Unsloth sits at 8.49 GB.** M0 (UD-IQ2_XXS's exact per-tensor types, every tensor encoded by us) is +0.02727 behind UD. Swapping in UD's own tensors by class splits that gap: gate_up 0.01676 (61%), non-expert 0.00629 (23%), down 0.00422 (15%). This independently replicates the sibling's 11.6 GB result: the edge is UD's encoding, not its type map.
-2. **The importance source is not the lever.** gate_up re-encoded with three imatrices (ggml-org, bartowski, ours) differs by less than 0.0004. The sibling found the same for domain and quantity.
-3. **Two mechanisms behind "better offline, worse in the model".**
-   - Domain shift. GPTQ-Q2_0 had 24-30% lower held-out output error on calibration-like text, but only -6% (layer 12) or +5.5% (layer 0) on S-text inputs. It lost on S three times: G2 +0.00293, X1 +0.00588, X3 +0.00386.
-   - Attenuation. A mean-aware scale refit lowered the full input-Gram error (layer 6: 0.129 to 0.107, 128/128 experts) and still raised KL by +0.07237. It shrinks the weights: gain <q,w>/<w,w> is 0.79 vs 0.94 for llama-quantize and UD at IQ1_S. Over 48 layer visits that compounds. UD lowers the error without attenuating.
-   - Rescaling our Q2_0 down to gain 1 does not close the down gap (X5 +0.00333 vs X2). Attenuation explains the refit failure, not all of UD's edge.
-4. **X2**, UD-IQ2_XXS with its 7 NVFP4 down projections re-encoded as IQ4_NL, runs fully on stock-llama.cpp Metal at +0.00063 [+0.00026, +0.00101] vs UD. That is at the backend noise floor (the sibling measured up to +0.0004).
-5. **Tooling that others can reuse.**
-   - An imatrix patch that captures full per-expert input Grams, pooled over the loop visits.
-   - A GPTQ encoder into plain Q2_0.
-   - A local rebuild of Unsloth's mainline files, sha256-identical.
-   - Byte-limit-checked assembly and mixing.
-   - Shared GPU and CPU locks across both repos.
-6. **The audit found one real bug.** The "diag" control was uniform rounding. It is fixed and documented; every other logged number reproduced.
+1. **Where the gap to Unsloth sits.** At UD-IQ2_XXS's exact per-tensor types, llama-quantize (M0) is +0.02727 behind UD on S. By tensor class, UD's edge is gate_up 0.01676 (61%), non-expert 0.00629 (23%) and down 0.00422 (15%). The edge is UD's encoding, not its type map.
+2. **Attenuation, the mechanism of the night.** MSE-style fits shrink the weights (row gain <q,w>/<w,w> < 1). The shrink compounds over the 48 layer visits of the looped model.
+   - A mean-aware gate_up scale refit lowered the full input-Gram error in 128/128 experts and still raised KL by +0.07237 (M0r, gain 0.79).
+   - The same refit with each row restored to llama-quantize's own per-row gain gains -0.00380 (M0rk vs M0u).
+   - Our Q2_0 down at gain 0.86 rescaled to 1 gains -0.00698 (M0u vs M0). A sweep puts the optimum at 0.98-1.00 (0.93: +0.00084, 1.07: +0.00284).
+   - Gain 1 is not a universal target. It hurts gate_up (M0uu +0.00138) and UD's own Q2_0 down at 0.90 (X6d +0.00185).
+   - Rule: refit for output error, then restore the reference encoder's per-row gain.
+3. **40% of the gap closed with own encoders.** M0rk - M0 = -0.01078 [-0.01193, -0.00960] on S. Our gate_up now closes 64% of UD's gate_up share.
+4. **UD's remaining edge is invisible to diagonal metrics.**
+   - On the 60 lower-bit attention and head matrices, ours beats UD in plain and in imatrix-weighted error 60/60. Every non-matrix tensor is byte-identical.
+   - Unsloth's non-expert tensors are worth -0.00246 in our stack, against -0.00629 next to UD's own gate_up. So about 60% of that share is joint with UD's expert tensors.
+   - The sibling's full-Gram code refinement matches UD's gate_up on its layers 9-11. That is the method that addresses this kind of edge.
+5. **Domain shift.** GPTQ-Q2_0 won offline by 24-30% on calibration-like inputs, only by about -6% to +5.5% on S-text inputs, and lost on S three times (+0.00293, +0.00588, +0.00386).
+6. **The importance source is not the lever.** Three imatrices for gate_up differ by less than 0.0004. Covering the output head in the imatrix is neutral (M0rko +0.00036 [-0.00009, +0.00084]).
+7. **Tooling, reusable and tested.**
+   - Imatrix patch for full per-expert input Grams.
+   - GPTQ into Q2_0.
+   - Gain/energy rescaler with `--target` / `--target-from` (`degain2.py`, shared with the sibling).
+   - Mean-aware refits for IQ1_S, IQ2_XXS, IQ2_XS, IQ2_S and Q2_0.
+   - sha256-identical rebuild of Unsloth's mainline files.
+   - Byte-limit-checked assembly.
+   - Shared GPU/CPU locks with an agreed small-job rule.
+8. **Two bugs found and fixed, both documented.** The "diag" control was unweighted rounding. `score()` clobbered its caller's loop variable (it broke one G4 run, no earlier result).
 
 ## Where we cannot compete
 
-- **Unsloth's encoder.** It wins in every tensor class at equal types. Its method is not public, and no encoder of ours (GPTQ, imatrix variants, scale refit, de-attenuation) closes any part of the gap.
-- **Unsloth's release and runtime.** Their prebuild (b12588-mix) already runs NVFP4 on Metal. "All-Metal" is therefore only a niche, for stock llama.cpp and the apps built on it.
-- **GPU-heavy methods.** GSQ/RCO-class methods need a PyTorch forward of the looped model and GPU time we don't have.
+- **Unsloth's encoder** wins in every tensor class at equal types. Its method is not public. Its remaining edge needs full-Gram code search, which at our types (IQ1_S, IQ2_XXS, IQ2_XS) has no refiner yet. It would also need Gram captures and many CPU hours.
+- **Unsloth's runtime.** Their prebuild already runs NVFP4 on Metal, so "all-Metal" alone is only a niche.
+- **GPU-heavy methods** (GSQ/RCO class) need GPU time we don't have.
 
-## The special win
+## What transfers
 
-There is none at the file level. Nothing beats UD-IQ2_XXS on S. What is new and transfers is a finding:
+- The attenuation rule, measured on this looped MoE: lower per-layer error is not lower KL, but a gain-restored refit is. This bears directly on the thesis question H1 (does error compound over passes).
+- The sibling adopted it as amendments 9c/9e and dropped its gain-1 mirror run because of X6d.
 
-- In this looped MoE, lower per-layer reconstruction error does not mean lower KL, even under the full input Gram.
-- Two measured causes: domain shift of the Gram, and attenuation compounding over 48 visits.
-- A practical rule follows: any encoder or refiner should log gain and energy per tensor, and reject moves that lower the gain. The sibling adopted this as amendment 9c.
-- This bears directly on the thesis question H1 (does error compound over passes).
+## If work continues
 
-## Lean order from here (updated 08:40 after Daniel's release policy and M0u)
+1. Full-Gram code refinement for IQ1_S, IQ2_XXS and IQ2_XS gate_up (extend the sibling's `refine-codes.py`), followed by the gain-restored scale refit. This is the only lever left with a measured share (gate_up about 0.006).
+2. Full-Gram refinement of the attention matrices (dense, one Gram each; ceiling about 0.0025 in our stack).
+3. A combined test at the sibling's size of its code refinement and our gain-restored scale refit.
 
-Daniel's policy: release only our own encodings. An Unsloth-derived file counts only if it is copied 1:1 and then beats UD (credited, his call). X2 is therefore a diagnostic, not a release.
-
-1. **Own-encoding path.** M0u (our full stack, Q2_0 down rescaled to gain 1) is our best own file: 0.09093 on S, -0.00698 [-0.00831, -0.00560] vs M0 and +0.02029 vs UD. Next is M0uu: also rescale our gate_up and IQ4_NL down to gain 1 (queued). Then a gain-constrained gate_up refit, and our own work on the non-expert share (23% of the gap).
-2. **Diagnostic X6d / X6dg** (UD's own tensors rescaled to gain 1; running). They test whether de-attenuation also improves UD's encoder. If one beats UD with the CI below zero, it is a credited "1:1 copy plus improvement" candidate for Daniel to decide on.
-3. **Before any release:** G4 on T1 and T2 (T2 with the sign rule) and G5 (bench and memory at 16K).
-4. **Option (a) "publish the findings"** stays the default if nothing of ours gets close to UD.
-
-**Park:** GPTQ variants, imatrix sources, donor mixes beyond X2, and refits without a gain constraint.
+**Park:** GPTQ variants, imatrix sources, gain-1 rescales, mean-aware Q2_0 down refit (surrogate -2%), donor mixes.
