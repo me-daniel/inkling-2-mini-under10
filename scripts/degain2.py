@@ -15,11 +15,11 @@ T = {x.name: x for x in gguf.GGUFReader(a.src).tensors}; t = T[n]; ty = t.tensor
 assert ty in BLK, ty.name
 qk, nb = BLK[ty]
 sc = np.asarray(T[sn].data, dtype=np.float64) if sn in T else None
-W = (np.asarray({x.name: x for x in gguf.GGUFReader(a.bf16).tensors}[n].data).view(np.uint16).astype(np.uint32) << 16).view(np.float32)
+Wraw = np.asarray({x.name: x for x in gguf.GGUFReader(a.bf16).tensors}[n].data)  # memmap; decoded per expert (RSS < 1 GB)
 raw = np.asarray(t.data); E = raw.shape[0]; out = []; acc = np.zeros(5)
 for e in range(E):
     blocks = np.ascontiguousarray(raw[e]).reshape(-1, nb).copy()
-    w = W[e].astype(np.float64); R = w.shape[0]; s = sc[e] if sc is not None else 1.0
+    w = (Wraw[e].view(np.uint16).astype(np.uint32) << 16).view(np.float32).astype(np.float64); R = w.shape[0]; s = sc[e] if sc is not None else 1.0
     q = dequantize(blocks, ty).reshape(w.shape).astype(np.float64) * s
     gain = (q * w).sum(1) / np.maximum((w * w).sum(1), 1e-30)
     fac = np.where(gain > 0.2, 1.0 / gain, 1.0)
