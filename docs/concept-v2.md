@@ -13,7 +13,7 @@ No file of ours beats Unsloth. Our best own-encoding file, M0rk (8,486,214,944 b
 | AD-IQ2_XXS-Q2 (AtomicChat, 7.90 GB) | -0.04051 [-0.04712, -0.03499] | -0.02099 [-0.02523, -0.01776] |
 | AD-IQ2_M (AtomicChat, 8.67 GB, context) | -0.01555 [-0.01871, -0.01278] | -0.00822 [-0.01193, -0.00498] |
 
-Daniel's policy releases only our own encodings, and those that clearly beat UD. So there is no release. The default is option (a): publish the findings.
+Daniel's policy releases only our own encodings. The "clearly beat the original" bar applies to derivative builds that carry someone else's tensors, not to our own encodings (corrected 22 Nov, 15:00; the first version of this doc applied it to M0rk). So M0rk is not ruled out. It fails the gate against UD, and it could still go out on the sibling v1's Mac track, as the closest-to-original all-Metal file at its size. That needs every all-Metal comparator at or under its size scored first, plus a speed measurement. Whether to release is Daniel's call.
 
 ## What we achieved (measured)
 

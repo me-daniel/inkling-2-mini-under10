@@ -189,3 +189,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - v2r - UD-IQ3_XXS: T1 +0.00138 [+0.00059, +0.00218], T2 +0.00468 [+0.00333, +0.00626]. v2r - v2a: T1 -0.00385 [-0.00470, -0.00298], T2 -0.00100 [-0.00186, +0.00009]. Gap share closed: S 0.93, T1 0.74, T2 0.18. The full-Gram refinement mostly fits its calibration domain (WikiText-2 train, about 5k tokens per median expert over 2304 dimensions). Not a release.
 - M0rk's refit is not a full-Gram fit. It uses only per-expert E[x] and Var x (2 x 2304 numbers) from ggml-org's imatrix (`scripts/m0r.sh`), not from our calibration text, so it has far fewer fitted statistics to overfit.
 - Held-out check, inferred (M0 was never scored on T1/T2, so no paired number): the gap from M0rk to UD-IQ2_XXS is +0.0165 on S (0.02727 - 0.01078), +0.01424 on T1 and +0.01662 on T2. The gap does not widen off S, so nothing points to M0rk's gain being S-specific.
+
+## 22 Nov 2026, 15:00: correction to the release bar
+
+- concept-v2 and the 14:20 entry applied "must clearly beat UD" to our own encodings. The policy (Daniel, 22 Nov) applies that bar to derivative builds that carry others' tensors. An own encoding needs no win over UD. The sibling's v1 went public on its Mac track (lowest KL among all-Metal files under its size) after failing its UD gate.
+- Consequence: M0rk (8.49 GB, all-Metal, own encoding) is a possible release on the same frame, if it is the closest-to-original all-Metal file at or under its size. That still needs the remaining comparators and a speed run. Daniel decides.
+- New tier under study: <= 9,138,715,328 B (UD-Q2_K_XL). UD-Q2_K_XL's header: 11 NVFP4 down tensors (2.10 GB) plus 1 MXFP4; gate_up IQ2_S in 11 layers (9, 11, 15-23).
