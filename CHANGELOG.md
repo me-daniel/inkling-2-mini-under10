@@ -115,3 +115,10 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - M0rk - UD +0.01649 [+0.01463, +0.01820].
 - Reading: the refit's lower full-Gram error was real. M0r lost only through attenuation, and restoring the reference gain keeps the gain in error and drops the harm. Rule for every encoder here: minimise output error with the row gain held at the reference encoder's.
 - Sibling's cand-u (their v1 rescaled to gain 1): -0.00034 [-0.00068, +0.00003], neutral. Their file barely attenuates (IQ4_NL down at 0.996).
+
+## 2026-11-22, 11:20: non-expert share, output-head importance; M0rko registered (before data)
+
+- All 178 non-expert matrices of ours (llama-quantize at UD's types, pool ne-ud) match UD's in plain relative error to within 1e-5 (first 4,096 rows each), and 33 of 178 start byte-identical. Yet UD's non-expert tensors are worth 0.00629 on S.
+- ggml-org's imatrix has no entry for output.weight or token_embd. So our IQ4_XS output head was quantized without importance weights. UD's was most likely weighted, and the output head feeds the logits directly.
+- Test M0rko: an imatrix with `--process-output` (cand.gguf forward, 160 chunks of calib-fit), the non-expert pool requantized with it at UD's types (ne-ud2), then M0rko = M0rk with ne-ud2. Reading: M0rko vs M0rk on S, paired. Own encodings only.
+- Order: the sibling's two runs first, then M0rko (own path), then the X6 diagnostics.

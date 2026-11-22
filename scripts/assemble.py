@@ -37,7 +37,7 @@ UD_SCALE = "ffn_gate_up_exps.scale"
 DOWN = {"iq4_nl": lambda l: SM / "pool-3bit.gguf", "q2opt": lambda l: SM / f"q2opt/L{l}.gguf",
         "diag": lambda l: M / f"down/diag-L{l}.gguf", "q2u": lambda l: M / f"down/q2u-L{l}.gguf", "gptq": lambda l: M / f"down/gptq-L{l}.gguf"}
 NE = {"udfile": M / "ext/mainline/UD-IQ2_XXS.gguf",  # Unsloth's own non-expert tensors (same names in mainline layout)
-      "ud": M / "pools/ne-ud.gguf", "q8_0": SM / "pool-3bit.gguf", "q6_k": SM / "cand.gguf", "q5_k": M / "pools/ne-q5.gguf", "q4_k": M / "pools/ne-q4.gguf"}
+      "ud": M / "pools/ne-ud.gguf", "ud2": M / "pools/ne-ud2.gguf",  # ud2: same types, imatrix with the output head "q8_0": SM / "pool-3bit.gguf", "q6_k": SM / "cand.gguf", "q5_k": M / "pools/ne-q5.gguf", "q4_k": M / "pools/ne-q4.gguf"}
 NE_RE = {"all": r"^(?!.*_exps\.)",  # every non-expert tensor (never a .scale of an expert)
          "attn": rf"^blk\.\d+\.{ATT}", "embd": r"^token_embd\.weight$", "out": r"^output\.weight$"}
 
