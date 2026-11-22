@@ -206,3 +206,19 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - Exact promotion costs per layer: down Q2_0→IQ4_NL +95,551,488 B; gate_up IQ1_S→IQ2_XXS +42,467,328 B, IQ2_XXS→IQ2_XS and IQ2_XS→IQ2_S +21,233,664 B each, IQ2_S→IQ3_XXS +42,467,328 B.
 - Open conflict: PLAN.md's measured 2.4 GB at 16K (cap about 9.05 GB) against Sol's KV-only estimate of 0.5-1.3 GiB at 8K-32K. Step 2 measures it.
 - Plan: M0rk as base, equal-byte promotions ranked by KL per byte, per-block gain sweep, refiner pilot. GPU steps wait for windows the sibling grants.
+
+## 22 Nov 2026, 19:40: pre-registration for concept-v3 steps 1-3 (before any step-2 or step-3 result)
+
+- Workload for the fit claim: one text stream, P = 3, f16 KV, default macOS GPU budget of 11,453 MB, at 8K and 16K context. The size cap is set after step 2's memory run: the largest size whose projected peak at 16K (M0rk's measured overhead added to the weights) stays under 11,453 MB, and never above 9,138,715,328 B.
+- Comparators for the Mac track (same weights, every expert tensor in a Metal type, at or under the candidate's size), scored on S, T1 and T2 against the same Q8_0 reference:
+  - AtomicChat AD-IQ2_XXS-Q2 7.90 GB (done), AD-IQ2_M 8.67 GB (done), AD-IQ1_M 7.26 GB and AD-IQ1_S 6.88 GB;
+  - abenzerps GSQ-RCO-IQ2_XS 8.95 GB.
+  - Context only, not all-Metal: UD-IQ1_S 7.76 GB (1 NVFP4), UD-IQ1_M, UD-IQ2_XXS, UD-Q2_K_XL. Different weights (abliterated, heretic) are out.
+- Gate per comparator: paired CI of candidate minus comparator below 0 on T1 and T2, and top-1 not lower. M0rk's existing T1/T2 runs count for M0rk. A new candidate gets T1/T2 once frozen, then T3.
+- Step 3, single promotions on M0rk, scored on S (16 chunks, paired against M0rk), each 85-96 MB:
+  - p-d13: down 13 Q2_0 -> IQ4_NL (pool-3bit), +95,551,488 B.
+  - p-d21: down 21 Q2_0 -> IQ4_NL, +95,551,488 B.
+  - p-g46: gate_up 4 and 6 IQ1_S -> IQ2_XXS (pool-2bit, mean-aware refit plus gain restore as M0rk), +84,934,656 B.
+  - p-g1318: gate_up 13 and 18 IQ2_XXS -> IQ2_S (gu-iq2_s, refit plus gain restore), +84,934,656 B.
+  - p-g2023: gate_up 20 and 23 IQ2_S -> IQ3_XXS (pool-3bit, plain; meanfit has no IQ3_XXS), +84,934,656 B.
+  - Rank by (KL change) / (bytes added). Combine the promotions whose CI is below 0, best ratio first, up to the cap, and verify the combination on S. Stop rule: if none of the five has a CI below 0, step 3 ends and the candidate stays M0rk.
