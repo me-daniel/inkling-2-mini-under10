@@ -22,7 +22,7 @@ FILES="m0rk:$M/tmp/m0rk.gguf UD-IQ2_XXS:$E/UD-IQ2_XXS.gguf UD-Q2_K_XL:$E/UD-Q2_K
 gpu_wait; GPU_HOLD=1
 step "GPU lock held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
 for spec in m0rk:8192 m0rk:16384 m0rk:32768 UD-Q2_K_XL:16384 GSQ-RCO-IQ2_XS:16384 UD-IQ2_XXS:16384; do
-    name=${spec%%:*}; d=${spec#*:}; f=$(for s in $FILES; do [ "${s%%:*}" = "$name" ] && echo "${s#*:}"; done)
+    name=${spec%%:*}; d=${spec#*:}; f=$(for s in $FILES; do [ "${s%%:*}" != "$name" ] || echo "${s#*:}"; done)  # || keeps the status 0 under set -e
     [ -f "$R/memory-$name-$d.txt" ] && continue
     mem_wait; step "peak memory $name at depth $d"
     /usr/bin/time -l "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -d "$d" -r 1 -o md > "$R/depth-$name-$d.txt" 2> "$L/step2-memory-$name-$d.log"
