@@ -143,3 +143,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - Our q2opt Q2_0 down, rescaled per row to a fixed gain g, inside M0rk (which has g = 1.00): m0rk-g93 (g = 0.93) and m0rk-g107 (g = 1.07). Reading: each vs M0rk on S, paired. Locates the KL-optimal gain for our encoding (least-squares optimum about 0.84, UD's own encoding about 0.90).
 - Donors run now under the small-job rule; builds and scores after m0rk-udne.
+
+## 2026-11-22, 12:20: m0rk-udne result
+
+- m0rk-udne (M0rk with UD's non-expert tensors): 0.08467, m0rk-udne - M0rk -0.00246 [-0.00327, -0.00168], against -0.00629 [-0.00679, -0.00578] for the same swap with UD's gate_up in place.
+- Reading: both (a) and (b) hold. About 60% of the earlier non-expert share is joint with UD's expert tensors. About 0.0025 is a standalone edge of UD's attention/head encoding, invisible to diagonal metrics (11:45). That 0.0025 is the ceiling for full-Gram work on attention in our stack, so it's parked behind gate_up and down.
