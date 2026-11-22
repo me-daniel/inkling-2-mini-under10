@@ -183,3 +183,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - v2r (sibling, own encoding, full-Gram code refinement of IQ2_S / IQ3_XXS gate_up, 11,566,703,648 B, 0 tensors off Metal): S 0.02102. v2a 0.02780, UD-IQ3_XXS 0.02050.
 - Paired, 16 chunks: v2r - v2a -0.00677 [-0.00758, -0.00610]; v2r - UD +0.00052 [-0.00030, +0.00133], not resolved. 93% of the gap closed. Grams come from WikiText-2 train, the same source as S, so held-out T1/T2 is still open.
 - Bearing on us: M0rk's gate_up is IQ1_S (layers 0-4, 6), IQ2_XXS (5, 7, 8, 12-14, 18), IQ2_XS (9-11, 15, 17, 22) and IQ2_S (16, 19-21, 23). The refiner supports only the 5 IQ2_S layers. At the sibling's size, refinement reached parity with Unsloth, not a win, so at 8.49 GB the best case is parity too.
+
+## 22 Nov 2026, 14:40: sibling's v2r held out (relayed), and the domain check for M0rk
+
+- v2r - UD-IQ3_XXS: T1 +0.00138 [+0.00059, +0.00218], T2 +0.00468 [+0.00333, +0.00626]. v2r - v2a: T1 -0.00385 [-0.00470, -0.00298], T2 -0.00100 [-0.00186, +0.00009]. Gap share closed: S 0.93, T1 0.74, T2 0.18. The full-Gram refinement mostly fits its calibration domain (WikiText-2 train, about 5k tokens per median expert over 2304 dimensions). Not a release.
+- M0rk's refit is not a full-Gram fit. It uses only per-expert E[x] and Var x (2 x 2304 numbers) from ggml-org's imatrix (`scripts/m0r.sh`), not from our calibration text, so it has far fewer fitted statistics to overfit.
+- Held-out check, inferred (M0 was never scored on T1/T2, so no paired number): the gap from M0rk to UD-IQ2_XXS is +0.0165 on S (0.02727 - 0.01078), +0.01424 on T1 and +0.01662 on T2. The gap does not widen off S, so nothing points to M0rk's gain being S-specific.
