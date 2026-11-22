@@ -1,13 +1,13 @@
 """Rescale every output row of an expert tensor to gain 1 against BF16 (codes unchanged): block fp16 d *= 1/gain_row.
     python scripts/degain2.py SRC.gguf OUT.gguf LAYER --kind ffn_down_exps|ffn_gate_up_exps
-Supports Q2_0 (64-weight blocks) and IQ1_S / IQ2_XXS / IQ2_XS / IQ2_S (256-weight blocks); d is the first 2 bytes of
+Supports Q2_0 (64-weight blocks), IQ4_NL (32) and IQ1_S / IQ2_XXS / IQ2_XS / IQ2_S (256-weight blocks); d is the first 2 bytes of
 each block. If SRC has the per-expert .scale for the tensor (Unsloth files), gain uses decode * scale and the .scale is
 copied into OUT unchanged. Checks the decode; prints gain and energy before and after."""
 import argparse, os
 import numpy as np, gguf
 from gguf import GGMLQuantizationType as Q
 from gguf.quants import dequantize
-BLK = {Q.Q2_0: (64, 18), Q.IQ1_S: (256, 50), Q.IQ2_XXS: (256, 66), Q.IQ2_XS: (256, 74), Q.IQ2_S: (256, 82)}
+BLK = {Q.Q2_0: (64, 18), Q.IQ4_NL: (32, 18), Q.IQ1_S: (256, 50), Q.IQ2_XXS: (256, 66), Q.IQ2_XS: (256, 74), Q.IQ2_S: (256, 82)}
 ap = argparse.ArgumentParser(); ap.add_argument("src"); ap.add_argument("out"); ap.add_argument("layer", type=int)
 ap.add_argument("--kind", required=True); ap.add_argument("--bf16", default="/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf")
 a = ap.parse_args(); n = f"blk.{a.layer}.{a.kind}.weight"; sn = n.replace(".weight", ".scale")

@@ -74,12 +74,14 @@ def plan(spec: dict) -> tuple[list[tuple[Path, str]], int, list[tuple[Path, str]
     taken = {}
     for l in range(24):
         n = f"blk.{l}.ffn_gate_up_exps.weight"
-        takes.append((GATE_UP[gu[l]], rf"^blk\.{l}\.ffn_gate_up_exps\.weight$")); taken[n] = GATE_UP[gu[l]]
-        if gu[l] == "ud" and f"blk.{l}.{UD_SCALE}" in _names(GATE_UP["ud"]):
+        src = GATE_UP[gu[l]] if gu[l] in GATE_UP else M / f"down/{gu[l]}-L{l}.gguf"  # per-layer donor of ours
+        takes.append((src, rf"^blk\.{l}\.ffn_gate_up_exps\.weight$")); taken[n] = src
+        if gu[l] == "ud" and gu[l] in GATE_UP and f"blk.{l}.{UD_SCALE}" in _names(GATE_UP["ud"]):
             adds.append((GATE_UP["ud"], rf"^blk\.{l}\.ffn_gate_up_exps\.scale$"))
             size += nbytes(GATE_UP["ud"], f"blk.{l}.{UD_SCALE}")
         n = f"blk.{l}.ffn_down_exps.weight"
-        takes.append((DOWN[dn[l]](l), rf"^blk\.{l}\.ffn_down_exps\.weight$")); taken[n] = DOWN[dn[l]](l)
+        dsrc = DOWN[dn[l]](l) if dn[l] in DOWN else M / f"down/{dn[l]}-L{l}.gguf"  # per-layer donor of ours
+        takes.append((dsrc, rf"^blk\.{l}\.ffn_down_exps\.weight$")); taken[n] = dsrc
     import re
     ne = spec.get("ne", {})
     base_names = [t.name for t in gguf.GGUFReader(BASE).tensors]

@@ -90,3 +90,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - X6d: UD's 17 Q2_0 down projections rescaled.
   - X6dg: X6d plus all 24 gate_up tensors (UD's) rescaled.
 - Reading: each vs X2 and vs UD on S, paired. A candidate only if it beats UD with the paired CI below zero; then G4 on T1 and T2 (T2 with the sign rule) before any claim.
+
+## 2026-11-22, 08:40: release policy from Daniel (relayed); M0uu registered
+
+- Daniel: prefer our own encodings. Credit others only if we copy 1:1 and the result improves on the original. Release paths are therefore our own encodings. X2, X6 and the donor mixes are diagnostics. An Unsloth-derived file is a candidate only if it beats UD (credited), and then it is Daniel's call. Option (b) "X2 as a repack" is dropped.
+- M0uu (own encodings only): M0u with our 24 gate_up tensors (llama-quantize, M0's types) and our 7 IQ4_NL downs also rescaled per row to gain 1. Reading: M0uu vs M0u on S, paired.
