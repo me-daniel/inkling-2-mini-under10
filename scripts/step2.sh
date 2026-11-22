@@ -13,7 +13,7 @@ for spec in "GSQ-RCO-IQ2_XS:$E/GSQ-RCO-IQ2_XS.gguf:${GSQ_OID:?}" "UD-Q2_K_XL:$E/
     name=${spec%%:*}; r=${spec#*:}; f=${r%%:*}; oid=${r#*:}
     [ -f "$R/sha-$name.txt" ] || { h=$(shasum -a 256 "$f" | cut -c1-64); [ "$h" = "$oid" ] || { echo "$name sha mismatch"; exit 1; }; echo "$name $h $(stat -f %z "$f") MATCH" > "$R/sha-$name.txt"; }
     [ -f "$ROOT/results/types-$name.txt" ] || $PY "$ROOT/scripts/gguf-types.py" "$f" > "$ROOT/results/types-$name.txt"
-    ln -sf "$f" "$E/$name.gguf"
+    [ "$f" = "$E/$name.gguf" ] || [ -e "$E/$name.gguf" ] || ln -s "$f" "$E/$name.gguf"  # never over the file itself (21:17 bug)
 done
 gpu_wait; GPU_HOLD=1; cpu_take
 step "locks held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
