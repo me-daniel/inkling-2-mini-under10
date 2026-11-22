@@ -47,3 +47,11 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - GPTQ v2 (fit Grams on X2, pooled alpha = 1.0: mean held-out error 0.09865 vs 0.11299 for diag over WikiText train and conversations, layers 0 and 12): X3 = X2 with GPTQ-Q2_0 at its 17 Q2_0 downs scores 0.07513 on S, X3 - X2 +0.00386 [+0.00271, +0.00497]. **Fails**; X3 is not a candidate. GPTQ for the Q2_0 down projections is closed for this model.
 - New lever, from the sibling's full-Gram finding (UD's gate_up beats llama-quantize's in 128/128 experts of layers 6 and 20, mostly through the expert-mean input direction): `scripts/meanfit.py` keeps llama-quantize's codes and fp16 d and refits only the 3-4 bit sub-block scales under n[diag(Var x) + m m^T] from the imatrix (closed form, then discrete coordinate descent; only scale bits change, decode checked).
 - Test M0r: M0 with all 24 gate_up tensors refit, everything else equal. Reading: M0r vs M0 on S, paired; UD's gate_up (m0-udgu, 0.08115) is the reference for how much of the 0.01676 gap it closes. A mechanism check on the sibling's full gate_up Grams (layers 6 and 20, WikiText-2 train) runs first and decides nothing.
+
+## 2026-11-22, 06:40: reading rules for M0r (before its score; from the Fable direction review)
+
+- M0r is a mechanism test. Even UD's own gate_up leaves M0 at 0.08115, 0.01051 above UD, so no M0-family file can be released from it.
+- Dead: the M0r - M0 CI includes zero, or M0r is above 0.0959 (gain under 0.002). Stop the refit line.
+- Partial: M0r in 0.0895-0.0959. A finding to write up; no release, no further GPU.
+- Strong: M0r at or below 0.0895 (half of the 0.01676 gate_up gap). Buys one follow-up: X2r = X2 with the same refit applied to UD's own gate_up. Release bar for X2r: at or below 0.0696 on S with the paired CI against UD below zero, then G4 on T1 and T2 as registered.
+- Labels fixed: the "S8" screens scored all 16 chunks (KL mode ignores --chunks). The scored UD file is the mainline rebuild, 8,486,237,632 bytes, sha256-identical to Unsloth's Mainline_Support file (results/ud-mainline-sha256.md); the byte limit stays the root file's 8,486,236,352. X2 vs UD compares Metal IQ4_NL with CPU-fallback NVFP4, so "+0.00063" reads as "equal to slightly worse" (the sibling measured backend noise up to +0.00040).
