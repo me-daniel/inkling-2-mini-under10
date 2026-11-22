@@ -11,6 +11,7 @@ gpu_wait() {
     while :; do
         if [ -e "$LOCK" ]; then
             pid=$(awk '{print $1}' "$LOCK" 2>/dev/null || true)
+            [ "$pid" = "$$" ] && return 0  # already ours (a caller holding the lock for a whole window)
             case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null || { rm -f "$LOCK"; continue; } ;; esac
         elif ! pgrep -x llama-bench > /dev/null && (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$LOCK") 2>/dev/null; then
             return 0  # callers own their traps (a trap here replaced theirs and dropped cpu_give)
@@ -31,8 +32,8 @@ score() { # name model set [extra...]; its variables are _s-prefixed so callers'
     gpu_wait; step "score $_sname"
     _sctx=4096; [ "$_sset" = T2 ] && _sctx=2048
     "$BIN/llama-perplexity" -m "$_smodel" -f "$ROOT/data/$_sset.txt" -c $_sctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
-        --kl-divergence-base "$SIB/models/logits/ref-$_sset-P3.kld" --kl-divergence "$@" > "$_slog" 2>&1 || { gpu_done; echo "score $_sname FAILED, see $_slog"; return 1; }
-    gpu_done
+        --kl-divergence-base "$SIB/models/logits/ref-$_sset-P3.kld" --kl-divergence "$@" > "$_slog" 2>&1 || { [ -n "${GPU_HOLD:-}" ] || gpu_done; echo "score $_sname FAILED, see $_slog"; return 1; }
+    [ -n "${GPU_HOLD:-}" ] || gpu_done  # GPU_HOLD=1: the caller keeps the lock across scores
     echo "$_ssig" > "$_slog.sig"
     grep -E 'Mean +KLD|Same top p' "$_slog" | tr '\n' ' '; echo
 }
