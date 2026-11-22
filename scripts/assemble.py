@@ -29,7 +29,10 @@ GATE_UP = {"iq3_xxs": SM / "pool-3bit.gguf", "iq2_xxs": SM / "pool-2bit.gguf", "
            # Unsloth's own gate_up tensors (mainline layout, sha256-checked); their per-expert .scale is appended
            "ud": M / "ext/mainline/UD-IQ2_XXS.gguf",
            # M0's per-layer types in one pool, quantized with another importance matrix (scripts/pool-map.sh)
-           "map-bart": M / "pools/map-bart.gguf", "map-mine": M / "pools/map-mine.gguf"}
+           "map-bart": M / "pools/map-bart.gguf", "map-mine": M / "pools/map-mine.gguf",
+           # mean-aware scale refit of the llama-quantize pools (scripts/meanfit.py)
+           "rf-iq1_s": M / "meanfit/rf-iq1_s.gguf", "rf-iq2_xxs": M / "meanfit/rf-iq2_xxs.gguf",
+           "rf-iq2_xs": M / "meanfit/rf-iq2_xs.gguf", "rf-iq2_s": M / "meanfit/rf-iq2_s.gguf"}
 UD_SCALE = "ffn_gate_up_exps.scale"
 DOWN = {"iq4_nl": lambda l: SM / "pool-3bit.gguf", "q2opt": lambda l: SM / f"q2opt/L{l}.gguf",
         "diag": lambda l: M / f"down/diag-L{l}.gguf", "gptq": lambda l: M / f"down/gptq-L{l}.gguf"}

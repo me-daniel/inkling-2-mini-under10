@@ -1,0 +1,7 @@
+pooled mean held-out error by alpha (layers 0, 12; WikiText train + conversations):
+  diag: 0.11299
+  0.25: 0.10128
+  1.0: 0.09865
+  4.0: 0.10105
+  16.0: 0.10633
+choice: 1.0

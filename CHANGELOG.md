@@ -41,3 +41,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - alpha is chosen by the lowest mean of two held-out errors over layers 0 and 12: the WikiText-2 train Gram (`grams/wt-x2`) and the held-out conversations Gram (`grams/eval`), equal weight. A WikiText-only choice would align with S and T1.
 - `scripts/gptq2.sh` (already running) picks on WikiText alone; `scripts/alpha-pool.sh` recomputes the pooled choice. If they differ, X3 is re-encoded with the pooled alpha before it is scored.
 - G4 is unchanged: T1 and T2 must each pass with their own CI. T2 (reasoning traces) is the cross-domain guard and is reported separately.
+
+## 2026-11-22, 06:00: GPTQ v2 result; mean-aware scale refit registered (before its data)
+
+- GPTQ v2 (fit Grams on X2, pooled alpha = 1.0: mean held-out error 0.09865 vs 0.11299 for diag over WikiText train and conversations, layers 0 and 12): X3 = X2 with GPTQ-Q2_0 at its 17 Q2_0 downs scores 0.07513 on S, X3 - X2 +0.00386 [+0.00271, +0.00497]. **Fails**; X3 is not a candidate. GPTQ for the Q2_0 down projections is closed for this model.
+- New lever, from the sibling's full-Gram finding (UD's gate_up beats llama-quantize's in 128/128 experts of layers 6 and 20, mostly through the expert-mean input direction): `scripts/meanfit.py` keeps llama-quantize's codes and fp16 d and refits only the 3-4 bit sub-block scales under n[diag(Var x) + m m^T] from the imatrix (closed form, then discrete coordinate descent; only scale bits change, decode checked).
+- Test M0r: M0 with all 24 gate_up tensors refit, everything else equal. Reading: M0r vs M0 on S, paired; UD's gate_up (m0-udgu, 0.08115) is the reference for how much of the 0.01676 gap it closes. A mechanism check on the sibling's full gate_up Grams (layers 6 and 20, WikiText-2 train) runs first and decides nothing.

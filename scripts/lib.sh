@@ -38,3 +38,17 @@ score() { # name model set [extra...]
 }
 # CPU-heavy jobs (llama-quantize, GPTQ) hold 5-8 GB: start one only while at least 30% of memory is free
 mem_wait() { while [ "$(memory_pressure | awk '/free percentage/ {sub("%","",$5); print $5}')" -lt "${MEM_FREE:-30}" ]; do sleep 30; done; }
+# CPU-heavy jobs (GPTQ sweeps and encodes, splices, quantize) run one at a time across both repos (agreed with the
+# sibling 22 Nov 05:25): ~/GitHub/.cpu.lock, same format as .gpu.lock ("<pid> <owner> <time>"), created with set -C,
+# stale when the pid is dead, removed only by its owner. mem_wait alone checks only at start (05:20 overlap).
+CLOCK="$HOME/GitHub/.cpu.lock"
+cpu_take() {
+    while :; do
+        if (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$CLOCK") 2>/dev/null; then mem_wait; return 0; fi
+        pid=$(awk '{print $1}' "$CLOCK" 2>/dev/null || true)
+        [ "$pid" = "$$" ] && return 0
+        case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null || { rm -f "$CLOCK"; continue; } ;; esac
+        sleep 20
+    done
+}
+cpu_give() { [ "$(awk '{print $1}' "$CLOCK" 2>/dev/null)" = "$$" ] && rm -f "$CLOCK"; return 0; }
