@@ -15,7 +15,7 @@ json.dump(m, open('$ROOT/configs/m0rk-g$g.json', 'w'))"
 done
 until ! pgrep -f "scripts/m0rk-udne[.]sh" >/dev/null && [ -f "$L/ppl-m0rk-udne-S.log" ]; do sleep 30; done  # GPU order
 for g in 93 107; do
-    out="$M/tmp/m0rk-g$g.gguf"; [ -f "$out" ] || { mem_wait; /usr/bin/time -l $PY "$ROOT/scripts/assemble.py" "$ROOT/configs/m0rk-g$g.json" "$out" 2> "$L/time-assemble.txt" || { cat "$L/time-assemble.txt"; exit 1; }; grep -E "real|maximum resident" "$L/time-assemble.txt"; }  # small-job rule: I/O-bound splice
+    out="$M/tmp/m0rk-g$g.gguf"; [ -f "$out" ] || { cpu_take; $PY "$ROOT/scripts/assemble.py" "$ROOT/configs/m0rk-g$g.json" "$out"; cpu_give; }  # splice measured 256 s, 6.7 GB RSS: not a small job
     score "m0rk-g$g-S" "$out" S; rm -f "$out"
 done
 $PY "$ROOT/analysis/kltable.py" > /dev/null; step "gsweep done"
