@@ -126,3 +126,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 ## 2026-11-22, 11:30: M0rko result
 
 - M0rko (non-expert pool requantized with an imatrix that covers output.weight): 0.08749, M0rko - M0rk +0.00036 [-0.00009, +0.00084]. Neutral. Importance weighting of the IQ4_XS output head is not the non-expert lever.
+
+## 2026-11-22, 11:45: non-expert tensors, where UD's edge is not; diagnostic registered
+
+- All non-matrix tensors (norms, router, loop controls, convs, biases: 600+) are byte-identical between our pool and UD. Q8_0: identical codes in every block, d differs by about 1 fp16 ulp in 77% of blocks (UD's slightly worse vs BF16). So the 0.00629 non-expert share sits in the 60 lower-bit attention matrices (Q4_K-Q6_K, IQ3_XXS) and the IQ4_XS head and embedding.
+- On those 60, ours beats UD in plain and in diagonal-imatrix-weighted error in 60/60 (e.g. Q5_K 0.00122 vs 0.00150). UD's edge there is invisible to any diagonal metric. Candidate explanations: (a) a Hessian-aware (off-diagonal) encoder for attention, (b) joint tuning with UD's own expert tensors (the 0.00629 was measured with UD's gate_up in place).
+- Diagnostic m0rk-udne = M0rk with UD's non-expert tensors. Reading: m0rk-udne - M0rk near -0.006 means the share is real in our stack (then capture attention Grams to test (a)); much smaller means (b).
