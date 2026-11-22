@@ -1,0 +1,8 @@
+layer	encoding	type	err	bias	rest	bias_share
+12	diag (ours)	Q2_0	0.12172	0.00745	0.11427	0.061
+12	GPTQ (ours)	Q2_0	0.08660	0.00035	0.08624	0.004
+12	UD-IQ2_XXS	Q2_0	0.12353	0.00716	0.11637	0.058
+layer	encoding	type	err	bias	rest	bias_share
+0	diag (ours)	Q2_0	0.11452	0.00680	0.10771	0.059
+0	GPTQ (ours)	Q2_0	0.06916	0.00034	0.06882	0.005
+0	UD-IQ2_XXS	Q2_0	0.10905	0.00597	0.10308	0.055

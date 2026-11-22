@@ -4,7 +4,8 @@
 
 SPEC: {"gate_up": {"1": "UD3", ...}, "down": {"18": "UD1M", ...}}. Layers not listed keep UD-IQ2_XXS's tensor, except
 that every NVFP4 down projection (which Metal cannot multiply) becomes IQ4_NL from our llama-quantize pool, as in X2.
-Sources: UD2 = UD-IQ2_XXS, UD1M = UD-IQ1_M, UD3 = UD-IQ3_XXS (all sha256-checked mainline files), iq4nl = ours.
+Sources: UD2 = UD-IQ2_XXS, UD1M = UD-IQ1_M, UD3 = UD-IQ3_XXS (all sha256-checked mainline files), iq4nl = ours,
+x2gptq / x2diag = our Q2_0 down from the Gram captured on X2 (models/down/<src>-L<l>.gguf).
 A tensor taken from another UD file brings its own per-expert .scale; an IQ4_NL tensor is unscaled, so the base's
 .scale for it is dropped. Refuses NVFP4 in the result, and a file above LIMIT unless --over.
 """
@@ -46,6 +47,8 @@ def plan(spec: dict) -> tuple[list[str], dict[str, tuple[str, str]]]:
                 src = "iq4nl"
             if src == "UD2":
                 continue
+            if src not in SRC:  # a per-layer donor of ours: models/down/<src>-L<l>.gguf (unscaled Q2_0)
+                key = f"{src}-L{l}"; SRC[key] = ROOT / f"models/down/{key}.gguf"; src = key
             t = tensors(src)[w]
             args += ["--take", str(SRC[src]), rf"^blk\.{l}\.{kind}\.weight$"]
             final[w] = (src, t.tensor_type.name)

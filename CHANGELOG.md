@@ -27,3 +27,11 @@ All on S (16 chunks, P = 3), paired bootstrap over chunks, from `results/kl.tsv`
 - Importance source: our llama-quantize gate_up at M0's map with bartowski's imatrix instead of ggml-org's: +0.00009 [-0.00031, +0.00049]. No effect.
 - X1 (UD-IQ2_XXS with our GPTQ-Q2_0 at its 17 Q2_0 downs and IQ4_NL at its 7 NVFP4 downs): 0.07715, +0.00651 [+0.00544, +0.00751] vs UD.
 - Consequence: our own encoders lose to Unsloth's at every tensor class we tested. The remaining route to a better file at this size is allocation over Unsloth-encoded tensors (from several UD files) with an all-Metal constraint. Such a file is a derivative of Unsloth's work and must say so.
+
+## 2026-11-22, 05:00: post hoc GPTQ v2 (registered before its data)
+
+Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NVFP4 downs re-encoded as IQ4_NL, all-Metal) 0.07127 on S, +0.00063 [+0.00026, +0.00101] vs UD; X1 vs X2 +0.00588 [+0.00493, +0.00674]; bundle mix-early (UD Q2_0 at downs 18-19 funding gate_up 0, 1, 4 from UD-IQ3_XXS) +0.00515 [+0.00395, +0.00644] vs X2. Decoding the written donors reproduces G1 exactly (no packing bug). On the held-out conversations UD's own Q2_0 down has the error and bias of our diag rounding (results/bias-split.tsv), so GPTQ's offline gain does not reach KL. Leading explanation: domain shift.
+
+1. Diagnostic only: the same encodings scored on a Gram from S text with the X2 forward (`scripts/sgram.sh`). Nothing is chosen on it.
+2. GPTQ v2 (`scripts/gptq2.sh`): fit Grams on X2 itself; alpha from {0.25, 1, 4, 16} by the lowest mean output error over layers 0 and 12 on a Gram from WikiText-2 train (`data/calib-wt.txt`, the sibling's file, 0 shared 13-grams with S, T1, T2, T3), chosen by script; if no alpha beats diag there, stop.
+3. X3 = X2 with GPTQ v2 at all 17 Q2_0 down slots. It becomes the candidate only if it beats X2 on S with the paired CI below zero. Then G4 on T1/T2 as registered. This step is post hoc and is reported as such.
