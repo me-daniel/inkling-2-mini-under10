@@ -152,3 +152,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 ## 2026-11-22, 12:35: gain sweep result
 
 - m0rk-g93 +0.00084 [+0.00012, +0.00157], m0rk-g107 +0.00284 [+0.00218, +0.00347], both vs M0rk (gain 1.00). A parabola through the three points has its minimum at g = 0.98, only about 0.00014 below g = 1. Gain 1.00 stays the target for our Q2_0 down. Sweep closed.
+
+## 2026-11-22, 12:45: mean-aware Q2_0 down refit, offline only
+
+- `scripts/meanfit_q2.py` (closed-form mean-aware refit of the Q2_0 block scales, then gain restore to 1; tests/test_meanfit_q2.py checks it against a dense solve). Layer 0: surrogate error after/before 0.979, against 0.83 for gate_up at layer 6 (the M0rk lever, -0.00380 KL). The down inputs carry less mean energy (4-13% vs 16-27% for gate_up). The expected KL effect lies below the S noise, so no model run.
+- Own-path status: the remaining shares (gate_up about 0.006, down about 0.003 (X5), attention about 0.0025 (m0rk-udne)) are all code-level and invisible to diagonal metrics. They need full-Gram code refinement (the sibling's refine-codes.py), which is not feasible tonight at this size: other types, other Grams, and the CPU is committed to the sibling's v2r chain.
+- M0rk is frozen as the own-encoding candidate. G4 next (T1, T2 vs UD-IQ2_XXS, UD-IQ1_M, AD-IQ2_XXS-Q2; T2 sign rule), for the record.
