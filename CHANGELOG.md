@@ -95,3 +95,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - Daniel: prefer our own encodings. Credit others only if we copy 1:1 and the result improves on the original. Release paths are therefore our own encodings. X2, X6 and the donor mixes are diagnostics. An Unsloth-derived file is a candidate only if it beats UD (credited), and then it is Daniel's call. Option (b) "X2 as a repack" is dropped.
 - M0uu (own encodings only): M0u with our 24 gate_up tensors (llama-quantize, M0's types) and our 7 IQ4_NL downs also rescaled per row to gain 1. Reading: M0uu vs M0u on S, paired.
+
+## 2026-11-22, 09:15: M0rg registered (before its data)
+
+- M0rg = M0uu with the mean-aware refit gate_up (M0r's donors, which lowered the full-Gram error in 128/128 experts at layer 6 but shrank the gain to 0.79-0.94) rescaled per row to gain 1. Reading: M0rg vs M0uu on S, paired. It isolates the refit's value once attenuation is removed.
+- Small-job rule agreed with the sibling (09:05): jobs under 2 GB RSS and under 2 minutes may run beside a held CPU lock while memory_pressure shows at least 30% free. `degain2.py` now streams one expert at a time (1.4 GB RSS, about 1 min per tensor).
