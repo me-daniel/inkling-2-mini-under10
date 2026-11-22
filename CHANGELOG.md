@@ -177,3 +177,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - KL on T1 / T2: M0rk 0.08007 / 0.05934, UD-IQ2_XXS 0.06583 / 0.04272, UD-IQ1_M 0.07596 / 0.04306, AD-IQ2_XXS-Q2 0.12058 / 0.08033, AD-IQ2_M 0.09562 / 0.06756.
 - Reading: the S ranking holds on held-out text. Our own encoding beats both AtomicChat files (one of them larger than ours) and loses to both Unsloth files, including the 0.46 GB smaller UD-IQ1_M. No release candidate. Option (a): publish the findings.
+
+## 22 Nov 2026, 14:20: sibling's v2r on S (relayed, not our run)
+
+- v2r (sibling, own encoding, full-Gram code refinement of IQ2_S / IQ3_XXS gate_up, 11,566,703,648 B, 0 tensors off Metal): S 0.02102. v2a 0.02780, UD-IQ3_XXS 0.02050.
+- Paired, 16 chunks: v2r - v2a -0.00677 [-0.00758, -0.00610]; v2r - UD +0.00052 [-0.00030, +0.00133], not resolved. 93% of the gap closed. Grams come from WikiText-2 train, the same source as S, so held-out T1/T2 is still open.
+- Bearing on us: M0rk's gate_up is IQ1_S (layers 0-4, 6), IQ2_XXS (5, 7, 8, 12-14, 18), IQ2_XS (9-11, 15, 17, 22) and IQ2_S (16, 19-21, 23). The refiner supports only the 5 IQ2_S layers. At the sibling's size, refinement reached parity with Unsloth, not a win, so at 8.49 GB the best case is parity too.
