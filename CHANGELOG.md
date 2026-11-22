@@ -138,3 +138,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - X6d (X2 with UD's own 17 Q2_0 downs rescaled per row from gain 0.88-0.91 to 1): 0.07312, X6d - X2 +0.00185 [+0.00119, +0.00248], X6d - UD +0.00248. Worse.
 - Reading: gain 1 is not the target. UD's Q2_0 sits at gain 0.90 / energy 0.94 and that is near its optimum. Our q2opt sat at 0.86 / 0.87, where the rescale to 1 helped (M0u). The right target is somewhere below 1, encoding-specific. The constraint that worked (M0rk) restores the reference encoder's own per-row gain.
 - X6dg (adds UD gate_up at gain 1) dropped before its data: both of its parts now predict harm (X6d here, gate_up at gain 1 in M0uu), and the GPU goes to the sibling's captures and m0rk-udne.
+
+## 2026-11-22, 12:00: gain sweep registered (before data)
+
+- Our q2opt Q2_0 down, rescaled per row to a fixed gain g, inside M0rk (which has g = 1.00): m0rk-g93 (g = 0.93) and m0rk-g107 (g = 1.07). Reading: each vs M0rk on S, paired. Locates the KL-optimal gain for our encoding (least-squares optimum about 0.84, UD's own encoding about 0.90).
+- Donors run now under the small-job rule; builds and scores after m0rk-udne.
