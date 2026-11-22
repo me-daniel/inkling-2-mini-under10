@@ -34,16 +34,13 @@ There is none at the file level. Nothing beats UD-IQ2_XXS on S. What is new and 
 - A practical rule follows: any encoder or refiner should log gain and energy per tensor, and reject moves that lower the gain. The sibling adopted this as amendment 9c.
 - This bears directly on the thesis question H1 (does error compound over passes).
 
-## Lean order from here
+## Lean order from here (updated 08:40 after Daniel's release policy and M0u)
 
-1. **Bench X2 vs UD on stock llama.cpp** (G5: speed at depth 0 and 16K, Metal buffer sizes). This is the only fact X2 still lacks (queued).
-2. **M0u** (our q2opt down at gain 1 inside M0), as a mechanism check only (queued).
-3. **Decision (Daniel).**
-   - (a) No release; publish the findings and the decomposition.
-   - (b) X2 as a clearly credited Unsloth repack for stock-llama.cpp Mac users, only if the bench shows a real speed gain. It then still needs G4 on T1 and T2 (T2 with its sign rule) and the label "equal to slightly worse than UD on KL".
-   - My recommendation is (a), plus (b) only if the speed gain is large.
-4. **Research to pursue only with more time.**
-   - Find out how UD's codes differ from llama-quantize's at the same type, offline: code choice, sign patterns, scale bits, with gain and energy logged.
-   - MACaQ-R-style full-Hessian code edits for the K-quant non-expert tensors, with a gain guard.
+Daniel's policy: release only our own encodings. An Unsloth-derived file counts only if it is copied 1:1 and then beats UD (credited, his call). X2 is therefore a diagnostic, not a release.
+
+1. **Own-encoding path.** M0u (our full stack, Q2_0 down rescaled to gain 1) is our best own file: 0.09093 on S, -0.00698 [-0.00831, -0.00560] vs M0 and +0.02029 vs UD. Next is M0uu: also rescale our gate_up and IQ4_NL down to gain 1 (queued). Then a gain-constrained gate_up refit, and our own work on the non-expert share (23% of the gap).
+2. **Diagnostic X6d / X6dg** (UD's own tensors rescaled to gain 1; running). They test whether de-attenuation also improves UD's encoder. If one beats UD with the CI below zero, it is a credited "1:1 copy plus improvement" candidate for Daniel to decide on.
+3. **Before any release:** G4 on T1 and T2 (T2 with the sign rule) and G5 (bench and memory at 16K).
+4. **Option (a) "publish the findings"** stays the default if nothing of ours gets close to UD.
 
 **Park:** GPTQ variants, imatrix sources, donor mixes beyond X2, and refits without a gain constraint.
