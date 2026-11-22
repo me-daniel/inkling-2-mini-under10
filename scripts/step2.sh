@@ -15,33 +15,36 @@ for spec in "GSQ-RCO-IQ2_XS:$E/GSQ-RCO-IQ2_XS.gguf:${GSQ_OID:?}" "UD-Q2_K_XL:$E/
     [ -f "$ROOT/results/types-$name.txt" ] || $PY "$ROOT/scripts/gguf-types.py" "$f" > "$ROOT/results/types-$name.txt"
     [ "$f" = "$E/$name.gguf" ] || [ -e "$E/$name.gguf" ] || ln -s "$f" "$E/$name.gguf"  # never over the file itself (21:17 bug)
 done
-gpu_wait; GPU_HOLD=1; cpu_take
-step "locks held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
 FILES="m0rk:$M/tmp/m0rk.gguf UD-IQ2_XXS:$E/UD-IQ2_XXS.gguf UD-Q2_K_XL:$E/UD-Q2_K_XL.gguf GSQ-RCO-IQ2_XS:$E/GSQ-RCO-IQ2_XS.gguf"
-for spec in $FILES; do
-    name=${spec%%:*}; f=${spec#*:}
-    [ -f "$R/bench-$name.txt" ] && continue
-    step "bench $name"
-    "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -r 3 -o md > "$R/bench-$name.txt.part" 2> "$L/step2-bench-$name.log"
-    mv "$R/bench-$name.txt.part" "$R/bench-$name.txt"; cat "$R/bench-$name.txt"
-done
-# peak memory: one llama-bench run at depth D (n_ctx = D + 512 + 128); /usr/bin/time -l gives max RSS and peak
-# footprint, and the log keeps llama.cpp's Metal buffer sizes. M0rk at 8K, 16K and 32K; the others at 16K.
+# Phase A, GPU lock only (23:50 change: holding the GPU while waiting for the CPU left it idle for hours). Peak memory and
+# KL do not depend on a quiet CPU. Peak memory: one llama-bench run at depth D (n_ctx = D + 512 + 128); /usr/bin/time -l
+# gives max RSS and peak footprint, and the log keeps llama.cpp's Metal buffer sizes. M0rk at 8K/16K/32K, the others at 16K.
+gpu_wait; GPU_HOLD=1
+step "GPU lock held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
 for spec in m0rk:8192 m0rk:16384 m0rk:32768 UD-Q2_K_XL:16384 GSQ-RCO-IQ2_XS:16384 UD-IQ2_XXS:16384; do
     name=${spec%%:*}; d=${spec#*:}; f=$(for s in $FILES; do [ "${s%%:*}" = "$name" ] && echo "${s#*:}"; done)
     [ -f "$R/memory-$name-$d.txt" ] && continue
-    step "peak memory $name at depth $d"
+    mem_wait; step "peak memory $name at depth $d"
     /usr/bin/time -l "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -d "$d" -r 1 -o md > "$R/depth-$name-$d.txt" 2> "$L/step2-memory-$name-$d.log"
     { grep -E "maximum resident set size|peak memory footprint" "$L/step2-memory-$name-$d.log"; grep -iE "MTL0_Mapped|Metal.*buffer size|KV.*MiB|compute buffer" "$L/step2-memory-$name-$d.log" | head -12; } > "$R/memory-$name-$d.txt"
     cat "$R/memory-$name-$d.txt"
 done
-cpu_give; step "CPU lock released; scores with the GPU lock alone"
 for name in UD-Q2_K_XL GSQ-RCO-IQ2_XS; do
     score "ext-$name-S" "$E/$name.gguf" S
     score "final-$name-T1-P3" "$E/$name.gguf" T1
     score "final-$name-T2-P3" "$E/$name.gguf" T2
 done
-GPU_HOLD=; gpu_done
 $PY "$ROOT/analysis/kltable.py" > /dev/null
 $PY "$ROOT/analysis/compare.py" cand UD-Q2_K_XL GSQ-RCO-IQ2_XS | tee "$R/compare.txt"
+# Phase B, both locks (GPU first, as the sibling's bench): all four files benched back to back in one window, so the
+# speed comparison shares conditions (the 21:15 bench-*.txt of three files stays as a first reading).
+cpu_take; step "both locks held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
+for spec in $FILES; do
+    name=${spec%%:*}; f=${spec#*:}
+    [ -f "$R/bench2-$name.txt" ] && continue
+    step "bench $name"
+    "$BIN/llama-bench" -m "$f" -ngl 99 -p 512 -n 128 -r 3 -o md > "$R/bench2-$name.txt.part" 2> "$L/step2-bench2-$name.log"
+    mv "$R/bench2-$name.txt.part" "$R/bench2-$name.txt"; cat "$R/bench2-$name.txt"
+done
+GPU_HOLD=; cpu_give; gpu_done
 step "step 2 done"
