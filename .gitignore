@@ -52,3 +52,4 @@ build/
 .idea/
 *.log
 
+.go-gpu

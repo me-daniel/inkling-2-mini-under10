@@ -100,3 +100,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - M0rg = M0uu with the mean-aware refit gate_up (M0r's donors, which lowered the full-Gram error in 128/128 experts at layer 6 but shrank the gain to 0.79-0.94) rescaled per row to gain 1. Reading: M0rg vs M0uu on S, paired. It isolates the refit's value once attenuation is removed.
 - Small-job rule agreed with the sibling (09:05): jobs under 2 GB RSS and under 2 minutes may run beside a held CPU lock while memory_pressure shows at least 30% free. `degain2.py` now streams one expert at a time (1.4 GB RSS, about 1 min per tensor).
+
+## 2026-11-22, 10:10: M0uu result; M0rg replaced by M0rk (before data)
+
+- M0uu (M0u plus our gate_up and IQ4_NL down rescaled to gain 1): 0.09231, M0uu - M0u +0.00138 [+0.00076, +0.00198]. **Worse.** Gain 1 is not a universal target. For Q2_0 down (gain about 0.86, linear into the residual) it helped (M0u -0.00698). For gate_up (gain 0.94-0.99, into SwiGLU) it overshoots: energy goes from about 1.14 to 1.28 at IQ1_S.
+- M0rg (refit gate_up rescaled to gain 1) is replaced, before any of its data, by M0rk: the refit gate_up rescaled per row back to llama-quantize's own per-row gain (the gain constraint), on M0u. Reading: M0rk vs M0u on S, paired. Its GPU score runs only after the sibling's two priority runs.
