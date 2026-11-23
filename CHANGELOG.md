@@ -320,3 +320,12 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - T2: M0 0.06517. m0-imat-mine 0.06517, diff -0.00000 [-0.00200, +0.00212]. m0-imat-bart 0.06447, diff -0.00070 [-0.00169, +0.00014].
 - By the registered rule (both within ±0.002): the domain of the imatrix behind llama-quantize's gate_up codes does not move T2, as it did not move S. Our capture included 137 conversations. The domain route for the codes is dropped.
 - Step 3d is still open. It tests the domain of the refit's E[x] and Var x, which enter the mean term that the diagonal imatrix weight ignores.
+
+## 23 Nov 2026, 07:50: step 3d result (measured, results/step3/m0rk-mix.txt)
+
+- M0rk-mix (M0rk's recipe, refit statistics from a calib-mix imatrix, same bytes) minus M0rk:
+  - S -0.00288 [-0.00386, -0.00197], top-1 88.15% vs 87.91%.
+  - T1 -0.00224 [-0.00293, -0.00162], top-1 88.84% vs 88.68%.
+  - T2 -0.00025 [-0.00185, +0.00158], top-1 91.55% vs 91.44%.
+- Registered rule: T2's CI includes 0, so the adoption criterion is not met. Domain of the refit statistics is not the lever for the T2 gap. With step 3c, calibration domain is ruled out for our recipe on T2, both for the codes' imatrix and for the refit statistics. What remains is the encoder's code choice, the same edge UD holds on S.
+- Post hoc decision, labeled as such (Daniel may reverse it): M0rk-mix replaces M0rk as the base for the step-3 combination. It is better on S and T1 with CIs below 0, not worse on any point estimate, and costs no bytes. The promotions were measured on M0rk. Their effects are assumed to carry over, and the combination is verified on its own.
