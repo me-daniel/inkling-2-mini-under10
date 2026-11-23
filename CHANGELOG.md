@@ -412,3 +412,7 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - KL rounding in per-chunk reconstruction (bounded, no verdict flips).
   - A content digest for references.
   - The findings in the sibling's refine-codes.py, gram-error.py and splice.py, sent to it.
+
+## 23 Nov 2026, 10:40: m0rk-S rescored on the current file (measured, results/m0rk-rescore.txt)
+
+- S 0.087126 on the current m0rk.gguf (sha256 a62fd9cc...), all 16 per-chunk values identical to the run on the 22 Nov 10:46 write. Model state ok. No stale run is left in kl.tsv.
