@@ -1,0 +1,9 @@
+T1 c1r vs GSQ-RCO-IQ2_XS: KL 0.06561 vs 0.08898, diff -0.02337 [-0.02638, -0.02047], top-1 89.72% vs 88.29% -> better
+T1 c1r vs UD-IQ2_XXS: KL 0.06561 vs 0.06583, diff -0.00022 [-0.00206, +0.00141], top-1 89.72% vs 89.88% -> not better
+T1 c1r vs UD-IQ1_M: KL 0.06561 vs 0.07596, diff -0.01035 [-0.01330, -0.00759], top-1 89.72% vs 89.46% -> better
+T1 c1r vs UD-IQ1_S: KL 0.06561 vs 0.08880, diff -0.02319 [-0.02721, -0.01977], top-1 89.72% vs 88.51% -> better
+T2 c1r vs GSQ-RCO-IQ2_XS: KL 0.04912 vs 0.05573, diff -0.00661 [-0.00901, -0.00371], top-1 91.87% vs 91.69% -> better
+T2 c1r vs UD-IQ2_XXS: KL 0.04912 vs 0.04272, diff +0.00640 [+0.00294, +0.00922], top-1 91.87% vs 93.16% -> not better
+T2 c1r vs UD-IQ1_M: KL 0.04912 vs 0.04306, diff +0.00606 [+0.00348, +0.00888], top-1 91.87% vs 93.29% -> not better
+T2 c1r vs UD-IQ1_S: KL 0.04912 vs 0.05194, diff -0.00282 [-0.00652, +0.00060], top-1 91.87% vs 92.71% -> not better
+quality gate: FAIL

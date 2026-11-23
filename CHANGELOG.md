@@ -426,3 +426,15 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   1. The Mac-track claim for c1 holds off-domain if c1 minus GSQ-RCO-IQ2_XS and c1 minus AD-IQ2_M have CIs below 0 in every domain. Otherwise the claim is narrowed to the domains where it holds.
   2. If c1r passes its T2 rule, it is adopted only if c1r minus c1 is not above 0 (CI) in any domain.
   3. Descriptive: c1/UD-IQ2_XXS and c1/UD-Q2_K_XL per domain, against the same ratio on T1 and T2.
+
+## 23 Nov 2026, 16:25: step 5 result, c1r (measured, results/c1r/)
+
+- c1r: c1 with full-Gram refined codes at gate_up 13, 16, 18-21, 23. 8,932,121,888 B (same as c1), sha256 c4d2f4e4...
+- Paired against c1 (development data):
+  - S 0.06949 vs 0.07209, -0.00260 [-0.00355, -0.00168].
+  - T1 0.06561 vs 0.06683, -0.00122 [-0.00196, -0.00055].
+  - T2 0.04912 vs 0.04889, +0.00023 [-0.00072, +0.00124]; top-1 91.87% vs 92.14%.
+- **Rule: c1r fails.** T2's CI is not below 0. c1 stays the 9 GB-tier candidate. Recorded per the rule: refinement at 7 of 24 layers is too small to move T2 in this file.
+- What it shows (inferred): the refiner lowers KL on S and T1, the WikiText-like sets, but not on T2. This is the same split as the diagonal statistics in step 3d. The caveat from 08:45 (Grams from cand.gguf's forward, not c1's) is untested.
+- Battery A (registered before any of its scores, which do not exist at this time): batA.sh still scores c1r. Its c1r - c1 rows are descriptive only and cannot reverse the rule above. They tell whether the S/T1 gain carries to code, German and maths, which decides whether a refiner run on c1's own forward is worth it.
+- The sibling may now edit refine-codes.py, gram-error.py and splice.py.
