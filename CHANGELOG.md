@@ -438,3 +438,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - What it shows (inferred): the refiner lowers KL on S and T1, the WikiText-like sets, but not on T2. This is the same split as the diagonal statistics in step 3d. The caveat from 08:45 (Grams from cand.gguf's forward, not c1's) is untested.
 - Battery A (registered before any of its scores, which do not exist at this time): batA.sh still scores c1r. Its c1r - c1 rows are descriptive only and cannot reverse the rule above. They tell whether the S/T1 gain carries to code, German and maths, which decides whether a refiner run on c1's own forward is worth it.
 - The sibling may now edit refine-codes.py, gram-error.py and splice.py.
+
+## 23 Nov 2026, 16:50: c1 rebuilt with the sibling's reviewed splice.py (measured, results/c1/splice-recheck.txt)
+
+- splice.py at the sibling's ca5b1e4 (code-review fixes: empty takes exit, atomic write, raw-byte verify) rebuilds c1 from configs/c1.json to the same sha256, 9975a56d... MATCH. Our callers need no change.
+- Note: splice.py now writes a side JSON named after its output path, so assemble.py's OUT.part leaves OUT.part.json. Harmless, not renamed yet.
