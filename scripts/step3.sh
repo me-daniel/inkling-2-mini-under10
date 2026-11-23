@@ -38,7 +38,7 @@ tail -n 4 "$L/step3-meanfit.log" "$L/step3-degain.log"
 # 3. single promotions, S only
 for spec in "p-d13:down:13=iq4_nl" "p-d21:down:21=iq4_nl" "p-g46:gate_up:4=rfx,6=rfx" "p-g1318:gate_up:13=rfx,18=rfx" "p-g2023:gate_up:20=iq3_xxs,23=iq3_xxs"; do
     name=${spec%%:*}; r=${spec#*:}; kind=${r%%:*}; sets=${r#*:}; out="$M/tmp/$name.gguf"
-    grep -q 'Mean *KLD' "$L/ppl-$name-S.log" 2>/dev/null && continue
+    grep -q 'Mean *KLD' "$L/ppl-$name-S.log" 2>/dev/null && grep -q 'Mean *KLD' "$L/ppl-$name-T2.log" 2>/dev/null && continue
     $PY -c "
 import json, sys
 m = json.load(open('$ROOT/configs/m0rk.json'))
@@ -51,17 +51,19 @@ json.dump(m, open('$ROOT/configs/$name.json', 'w'))"
     sz=$(stat -f %z "$out"); echo "$name $sz bytes" | tee -a "$R/sizes.txt"
     [ "$sz" -le "$CAP" ] || { echo "$name over the cap"; exit 1; }
     score "$name-S" "$out" S
+    score "$name-T2" "$out" T2  # amendment 23 Nov 01:40: T2 as development data
     rm -f "$out"
 done
 $PY "$ROOT/analysis/kltable.py" > /dev/null
 $PY - <<EOF | tee "$R/promotions.txt"
 import sys; sys.path.insert(0, "$ROOT/analysis")
 from compare import load, paired
-k = load(); base = k["m0rk-S"]["chunks"]; M0 = 8486214944
+k = load(); base, base2 = k["m0rk-S"]["chunks"], k["final-cand-T2-P3"]["chunks"]; M0 = 8486214944
 sizes = dict(l.split()[:2] for l in open("$R/sizes.txt"))
-print("promotion\tKL\tdiff vs m0rk [95% CI]\tbytes added\tKL change per 100 MB")
+print("promotion\tS KL\tS diff vs m0rk [95% CI]\tT2 KL\tT2 diff vs m0rk [95% CI]\tbytes added\tS change per 100 MB")
 for n in ("p-d13", "p-d21", "p-g46", "p-g1318", "p-g2023"):
     c = k[n + "-S"]["chunks"]; d, lo, hi = paired(c, base); add = int(sizes[n]) - M0
-    print(f"{n}\t{c.mean():.5f}\t{d:+.5f} [{lo:+.5f}, {hi:+.5f}]\t{add:,}\t{d / add * 1e8:+.5f}")
+    c2 = k[n + "-T2"]["chunks"]; d2, lo2, hi2 = paired(c2, base2)
+    print(f"{n}\t{c.mean():.5f}\t{d:+.5f} [{lo:+.5f}, {hi:+.5f}]\t{c2.mean():.5f}\t{d2:+.5f} [{lo2:+.5f}, {hi2:+.5f}]\t{add:,}\t{d / add * 1e8:+.5f}")
 EOF
 step "step 3 done"
