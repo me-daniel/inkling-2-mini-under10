@@ -6,13 +6,7 @@ set -eu
 . "$(dirname "$0")/lib.sh"
 trap 'cpu_give; gpu_done' EXIT
 E="$M/ext"; R="$ROOT/results/step2"
-while :; do
-    if [ ! -e "$LOCK" ] && [ ! -e "$CLOCK" ] && ! pgrep -x llama-bench > /dev/null && (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$LOCK") 2>/dev/null; then
-        if (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$CLOCK") 2>/dev/null; then break; fi
-        gpu_done
-    fi
-    sleep 30
-done
+until both_try; do sleep 30; done
 mem_wait; step "both locks held; memory: $(memory_pressure | grep -o 'free percentage: [0-9]*%')"
 for spec in "m0rk:$M/tmp/m0rk.gguf" "UD-IQ2_XXS:$E/UD-IQ2_XXS.gguf" "UD-Q2_K_XL:$E/UD-Q2_K_XL.gguf" "GSQ-RCO-IQ2_XS:$E/GSQ-RCO-IQ2_XS.gguf"; do
     name=${spec%%:*}; f=${spec#*:}

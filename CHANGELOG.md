@@ -458,3 +458,10 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
   The gap does not grow off-domain for c1. The sibling's v2m was at 1.20-1.30 against UD there (its amendment 15). Inferred: v2m's off-domain loss comes from its own calibration-fitted encodings, which c1 does not share (c1 is ggml-org imatrix plus mean-aware refit). Untested.
 - c1 to UD-IQ2_XXS: python and rust within noise (CIs span 0), german and math UD better. The claim stays the Mac track, with the gap to Unsloth stated.
+
+## 23 Nov 2026, 18:45: shared locks move to kernel locks (lockf), paired with the sibling's 9b03ba5
+
+- Why: the code reviews found a race in the pid-file locks. A stale-lock rm could delete a lock another job had just created with set -C, so two jobs could hold the GPU.
+- scripts/lib.sh: the sibling's _take/_give. A background `lockf -k` holds the flock and watches our pid, and the kernel drops the lock when the job ends. Lock files stay on disk, and their existence means nothing. gpu_wait still waits out a running llama-bench. New both_try takes both locks only if both are free right now, else neither (bench2.sh and c1-checks.sh use it instead of their -e tests, which would now wait forever).
+- tests/locks.sh (with tests/lockhold.sh), 12 checks on scratch files, all pass. Covered: exclusion, try, re-entry, retake after give, release on kill -9, both_try (busy, free, GPU already ours), exclusion against a holder taken with the sibling's own gpu-lock.sh, and no holders left over.
+- No job ran on either side during the switch.

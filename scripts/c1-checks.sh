@@ -34,13 +34,7 @@ from compare import load, paired
 k = load(); a, b = k["c1-upstream-S"], k["c1-S"]; d, lo, hi = paired(a["chunks"], b["chunks"])
 print(f"S c1 on upstream c661033 vs our build: {a['chunks'].mean():.5f} vs {b['chunks'].mean():.5f}, diff {d:+.5f} [{lo:+.5f}, {hi:+.5f}]")
 PYEOF
-while :; do
-    if [ ! -e "$LOCK" ] && [ ! -e "$CLOCK" ] && ! pgrep -x llama-bench > /dev/null && (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$LOCK") 2>/dev/null; then
-        if (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$CLOCK") 2>/dev/null; then break; fi
-        gpu_done
-    fi
-    sleep 30
-done
+until both_try; do sleep 30; done
 mem_wait; step "both locks held for the speed bench"
 for spec in "c1:$F" "m0rk:$M/tmp/m0rk.gguf"; do
     name=${spec%%:*}; f=${spec#*:}

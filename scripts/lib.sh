@@ -3,23 +3,38 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd -P); SIB=$(cd "$ROOT/../inkling-2-mini-qua
 BIN="$ROOT/vendor/llama.cpp/build/bin"; M="$ROOT/models"; L="$ROOT/logs"; PY="$SIB/.venv/bin/python -I"
 mkdir -p "$L"
 step() { echo "[$(date '+%H:%M:%S')] $*"; }
-# Shared GPU lock with the sibling session (agreed 22 Nov): ~/GitHub/.gpu.lock exists while one heavy GPU job runs.
-# gpu_wait takes it atomically (noclobber) with "<pid> <repo> <time>" inside; gpu_done releases it. A lock whose pid is
-# gone is stale and removed. Never start beside a llama-bench.
+# Shared locks with the sibling repo: ~/GitHub/.gpu.lock (one heavy GPU job) and ~/GitHub/.cpu.lock (one heavy CPU
+# job). Kernel locks since 23 Nov 18:30 (agreed with the sibling, its 9b03ba5): a background `lockf -k FILE` holds an
+# flock and watches this script's pid, so the kernel drops the lock when the job ends, however it ends. The file stays
+# on disk and only names the last holder ("<holder pid> <owner> <time>"); its existence means nothing, and nothing is
+# removed by hand. (The old pid files could lose a lock to a stale-lock rm racing a new set -C.)
+# A bare `wait` would now wait on the holder forever: always wait on a pid.
 LOCK="$HOME/GitHub/.gpu.lock"
-gpu_wait() {
-    while :; do
-        if [ -e "$LOCK" ]; then
-            pid=$(awk '{print $1}' "$LOCK" 2>/dev/null || true)
-            [ "$pid" = "$$" ] && return 0  # already ours (a caller holding the lock for a whole window)
-            case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null || { rm -f "$LOCK"; continue; } ;; esac
-        elif ! pgrep -x llama-bench > /dev/null && (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$LOCK") 2>/dev/null; then
-            return 0  # callers own their traps (a trap here replaced theirs and dropped cpu_give)
-        fi
-        sleep 20
-    done
+CLOCK="$HOME/GitHub/.cpu.lock"
+_take() { # lockfile [lockf options]: start a holder and wait until it holds the lock; 1 if the holder gave up
+    _lk_v=_lk_holder_$(echo "$1" | tr -c 'a-zA-Z0-9' _)
+    eval "_lk_h=\${$_lk_v:-}"
+    [ -n "$_lk_h" ] && kill -0 "$_lk_h" 2>/dev/null && return 0  # already ours (a caller holding it for a window)
+    _lk_f=$1; shift
+    /usr/bin/lockf -k "$@" "$_lk_f" sh -c 'echo "$PPID $2 $(date +%H:%M:%S)" > "$3"; while kill -0 "$1" 2>/dev/null; do sleep 2; done' \
+        _ "$$" under10 "$_lk_f" 2>/dev/null &
+    _lk_h=$!
+    # the holder's pid in the file, not ours: a give-then-take cannot be fooled by our own old entry
+    while [ "$(cut -d' ' -f1 "$_lk_f" 2>/dev/null)" != "$_lk_h" ]; do kill -0 "$_lk_h" 2>/dev/null || return 1; sleep 1; done
+    eval "$_lk_v=$_lk_h"
 }
-gpu_done() { [ -e "$LOCK" ] && [ "$(awk '{print $1}' "$LOCK")" = "$$" ] && rm -f "$LOCK"; return 0; }
+_give() { # lockfile: end our holder (its watcher child first, so lockf exits and the kernel drops the lock)
+    _lk_v=_lk_holder_$(echo "$1" | tr -c 'a-zA-Z0-9' _)
+    eval "_lk_h=\${$_lk_v:-}"
+    [ -n "$_lk_h" ] || return 0
+    { pkill -P "$_lk_h"; kill "$_lk_h"; wait "$_lk_h"; } 2>/dev/null || :  # || : so set -e callers survive
+    eval "$_lk_v="; return 0
+}
+# Never start beside a llama-bench. Callers own their traps (a trap here replaced theirs and dropped cpu_give).
+gpu_wait() { while pgrep -x llama-bench > /dev/null; do sleep 20; done; _take "$LOCK"; }
+gpu_done() { _give "$LOCK"; }
+# both locks only if both are free right now (benches), else neither: 0 when held
+both_try() { ! pgrep -x llama-bench > /dev/null && _take "$LOCK" -t 0 || return 1; _take "$CLOCK" -t 0 && return 0; gpu_done; return 1; }
 # score MODEL on SET (S, T1, T2) against the sibling's Q8_0 reference logits at P = 3 -> logs/ppl-NAME.log
 # Hardened 23 Nov after the Astra and Fable code reviews (reviews/2026-11-23-code-pipeline-*.md):
 # - the key binds model and reference (path, size, mtime, inode), the scorer binary AND its dylibs, and the extra
@@ -68,16 +83,6 @@ score() { # name model set [extra...]; its variables are _s-prefixed so callers'
 # CPU-heavy jobs (llama-quantize, GPTQ) hold 5-8 GB: start one only while at least 30% of memory is free
 mem_wait() { while [ "$(memory_pressure | awk '/free percentage/ {sub("%","",$5); print $5}')" -lt "${MEM_FREE:-30}" ]; do sleep 30; done; }
 # CPU-heavy jobs (GPTQ sweeps and encodes, splices, quantize) run one at a time across both repos (agreed with the
-# sibling 22 Nov 05:25): ~/GitHub/.cpu.lock, same format as .gpu.lock ("<pid> <owner> <time>"), created with set -C,
-# stale when the pid is dead, removed only by its owner. mem_wait alone checks only at start (05:20 overlap).
-CLOCK="$HOME/GitHub/.cpu.lock"
-cpu_take() {
-    while :; do
-        if (set -C; echo "$$ under10 $(date '+%H:%M:%S')" > "$CLOCK") 2>/dev/null; then mem_wait; return 0; fi
-        pid=$(awk '{print $1}' "$CLOCK" 2>/dev/null || true)
-        [ "$pid" = "$$" ] && return 0
-        case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null || { rm -f "$CLOCK"; continue; } ;; esac
-        sleep 20
-    done
-}
-cpu_give() { [ "$(awk '{print $1}' "$CLOCK" 2>/dev/null)" = "$$" ] && rm -f "$CLOCK"; return 0; }
+# sibling 22 Nov 05:25), on the kernel lock above. mem_wait alone checks only at start (05:20 overlap).
+cpu_take() { _take "$CLOCK"; mem_wait; }
+cpu_give() { _give "$CLOCK"; }
