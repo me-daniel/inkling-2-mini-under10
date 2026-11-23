@@ -416,3 +416,13 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 ## 23 Nov 2026, 10:40: m0rk-S rescored on the current file (measured, results/m0rk-rescore.txt)
 
 - S 0.087126 on the current m0rk.gguf (sha256 a62fd9cc...), all 16 per-chunk values identical to the run on the 22 Nov 10:46 write. Model state ok. No stale run is left in kl.tsv.
+
+## 23 Nov 2026, 11:15: pre-registration, off-domain check on the sibling's battery A (before any of our scores on it)
+
+- Why: the sibling's amendment 15 found UD's lead grows off the calibration domain (v2m/UD 1.20-1.30 on code, German and maths texts, against 1.03 on T1 and 1.12 on T2). We never used these texts in development, so they are a fresh check that needs no thesis-reserved tokens.
+- Data and logits: the sibling's data/battery/A-{python,rust,german,math}.txt (sha256 in its results/battery/data.md; 8 documents x 4,096 tokens each) and its Q8_0 reference logits batA-<d>-P3.kld. It regenerates them one domain at a time under its own approval, and we read them only. Settings are the sibling's: -c 1024 --chunks 32, P = 3.
+- Files: c1, M0rk, c1r if built by then, GSQ-RCO-IQ2_XS, AD-IQ2_M, UD-IQ2_XXS, and UD-Q2_K_XL as context.
+- Readings, paired per chunk within each domain:
+  1. The Mac-track claim for c1 holds off-domain if c1 minus GSQ-RCO-IQ2_XS and c1 minus AD-IQ2_M have CIs below 0 in every domain. Otherwise the claim is narrowed to the domains where it holds.
+  2. If c1r passes its T2 rule, it is adopted only if c1r minus c1 is not above 0 (CI) in any domain.
+  3. Descriptive: c1/UD-IQ2_XXS and c1/UD-Q2_K_XL per domain, against the same ratio on T1 and T2.

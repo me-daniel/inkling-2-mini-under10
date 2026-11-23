@@ -31,7 +31,13 @@ gpu_done() { [ -e "$LOCK" ] && [ "$(awk '{print $1}' "$LOCK")" = "$$" ] && rm -f
 # Runs from before 23 Nov keep their old key (path size mtime set args ref bin), accepted by _slegacy.
 _sfile() { _sf=$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1"); printf '%s %s' "$_sf" "$(stat -L -f '%z %m %i' "$_sf")"; }
 _sdylibs() { stat -f '%m' "$BIN"/llama-perplexity "$BIN"/*.dylib 2>/dev/null | cksum | cut -d' ' -f1; }
-_schunks() { case $1 in S|T1) echo 16 ;; T2) echo 5 ;; *) echo "" ;; esac; }
+_schunks() { case $1 in S|T1) echo 16 ;; T2) echo 5 ;; batA-*) echo 32 ;; *) echo "" ;; esac; }
+# sets: S, T1, T2 (our data/, the sibling's ref-SET-P3.kld) and batA-<domain> (the sibling's fresh-domain battery A:
+# its data/battery/A-<domain>.txt and models/logits/batA-<domain>-P3.kld, read-only, at its settings -c 1024 --chunks 32)
+_sset_paths() { case $1 in
+    batA-*) _stext="$SIB/data/battery/A-${1#batA-}.txt"; _sref="$SIB/models/logits/$1-P3.kld"; _sctx=1024; _sxtra="--chunks 32" ;;
+    *) _stext="$ROOT/data/$1.txt"; _sref="$SIB/models/logits/ref-$1-P3.kld"; _sctx=4096; [ "$1" = T2 ] && _sctx=2048; _sxtra="" ;;
+    esac; }
 _sok() { # log set: a finite final KL, no nan/inf chunk, and the expected last chunk index
     grep -Eq 'Mean +KLD: +[0-9]+\.[0-9]+' "$1" || return 1
     ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$1" || return 1
@@ -42,7 +48,7 @@ score() { # name model set [extra...]; its variables are _s-prefixed so callers'
     _sname=$1 _smodel=$2 _sset=$3; shift 3
     for _sa in "$@"; do case $_sa in -m|--model|-f|--file|--kl-divergence-base|-c|--ctx-size|--chunks|--override-kv)
         echo "score $_sname: '$_sa' is set by score() and may not be passed"; return 1 ;; esac; done
-    _slog="$L/ppl-$_sname.log"; _sref="$SIB/models/logits/ref-$_sset-P3.kld"
+    _slog="$L/ppl-$_sname.log"; _sset_paths "$_sset"
     _skey() { printf 'v2 %s set %s args' "$(_sfile "$_smodel")" "$_sset"; printf ' [%s]' "$@"; printf ' ref %s bin %s' "$(_sfile "$_sref")" "$(_sdylibs)"; }
     _slegacy="$(cd "$(dirname "$_smodel")" && pwd -P)/$(basename "$_smodel") $(stat -L -f '%z %m' "$_smodel") $_sset $* ref $(stat -L -f '%z %m' "$_sref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
     _scached() { [ -f "$_slog" ] && _sok "$_slog" "$_sset" && { [ "$(cat "$_slog.sig" 2>/dev/null)" = "$(_skey "$@")" ] || [ "$(cat "$_slog.sig" 2>/dev/null)" = "$_slegacy" ]; }; }
@@ -50,8 +56,7 @@ score() { # name model set [extra...]; its variables are _s-prefixed so callers'
     gpu_wait
     _scached "$@" && { [ -n "${GPU_HOLD:-}" ] || gpu_done; return 0; }  # another process scored it while we waited
     step "score $_sname"; _ssig=$(_skey "$@")
-    _sctx=4096; [ "$_sset" = T2 ] && _sctx=2048
-    if ! "$BIN/llama-perplexity" -m "$_smodel" -f "$ROOT/data/$_sset.txt" -c $_sctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
+    if ! "$BIN/llama-perplexity" -m "$_smodel" -f "$_stext" -c $_sctx $_sxtra -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
         --kl-divergence-base "$_sref" --kl-divergence "$@" > "$_slog.part" 2>&1 || ! _sok "$_slog.part" "$_sset"; then
         [ -n "${GPU_HOLD:-}" ] || gpu_done; echo "score $_sname FAILED, see $_slog.part"; return 1
     fi
