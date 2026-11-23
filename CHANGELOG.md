@@ -362,3 +362,15 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - UD-Q2_K_XL: T1 +0.01579, T2 +0.01397.
 - T1 and T2 were used in development (the T2 promotion amendment, the M0rk-mix base decision), so these are development readings. A release claim needs T3 (Daniel).
 - c1 is frozen as the 9 GB-tier candidate at this sha256. Next, the v1-frame checks on c1: peak memory at 16K, the unpatched-upstream S score, the stability battery and the quiet speed bench.
+
+## 23 Nov 2026, 08:35: pre-registration, step 5 (full-Gram code refinement of c1's supported gate_up layers)
+
+- Why: the sibling's v2r to v2m moved T2 by -0.00299 through full-Gram code search on mixed-domain Grams. Our diagonal refit statistics on the same text did not (step 3d). c1 has gate_up in the refiner's types in 7 layers: IQ2_S at 13, 16, 18, 19 and 21, IQ3_XXS at 20 and 23.
+- Build, c1r:
+  - Capture full per-expert input Grams of those 7 layers with our llama-imatrix (GRAM_DIR/GRAM_MATCH) on the sibling's cand.gguf at P = 3. Text: calib-mix.txt, 300 x 512 tokens, --parse-special, as the sibling's amendment 13. Two groups (13 16 18 19) and (20 21 23).
+  - Refine with the sibling's `scripts/refine-codes.py`, used read-only from its repo, at its v2m settings: shrink 0.1, min tokens 2304, gain guard on, sweeps 4, tol 1e-4, 4 workers. --quant is c1, so each row's gain floor is c1's own.
+  - Codes change, scales stay. Splice the 7 refined tensors into c1. Same size.
+- Reading, paired against c1 on S, T1 and T2 (development):
+  - Accept c1r if T2 has its CI below 0 and neither S nor T1 rises by more than 0.001.
+  - Otherwise c1 stays the candidate, and refinement at 7 of 24 layers is recorded as too small for this file.
+- Credit: the refiner and the calibration text are the sibling's, our own work in Daniel's repos (no outside credit needed). The write-up cites MACaQ (arXiv 2611.10649, Appendix C) for full-Hessian codes-only search in IQ formats.
