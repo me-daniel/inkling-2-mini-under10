@@ -329,3 +329,20 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - T2 -0.00025 [-0.00185, +0.00158], top-1 91.55% vs 91.44%.
 - Registered rule: T2's CI includes 0, so the adoption criterion is not met. Domain of the refit statistics is not the lever for the T2 gap. With step 3c, calibration domain is ruled out for our recipe on T2, both for the codes' imatrix and for the refit statistics. What remains is the encoder's code choice, the same edge UD holds on S.
 - Post hoc decision, labeled as such (Daniel may reverse it): M0rk-mix replaces M0rk as the base for the step-3 combination. It is better on S and T1 with CIs below 0, not worse on any point estimate, and costs no bytes. The promotions were measured on M0rk. Their effects are assumed to carry over, and the combination is verified on its own.
+
+## 23 Nov 2026, 08:00: step 3 result and the combination (measured, results/step3/promotions.txt)
+
+- All five single promotions on M0rk have S CIs below 0 and T2 point estimates below 0, so all enter by the registered rules (19:40 and 01:40). Ranked by S change per 100 MB:
+  - p-g46: -0.00353 (S -0.00300 [-0.00406, -0.00189], T2 -0.00207 [-0.00410, +0.00055])
+  - p-d21: -0.00288 (S -0.00275, T2 -0.00092)
+  - p-g1318: -0.00246 (S -0.00209, T2 -0.00114)
+  - p-g2023: -0.00239 (S -0.00203, T2 -0.00071)
+  - p-d13: -0.00215 (S -0.00205, T2 -0.00181)
+- Together they add 445,906,944 B, which fits the cap (8,976,127,992 B).
+- Combination c1, on the M0rk-mix base (07:50, post hoc):
+  - gate_up 4 and 6 IQ2_XXS and 13 and 18 IQ2_S, each refit with the mix statistics plus gain restore as M0rk-mix;
+  - gate_up 20 and 23 IQ3_XXS plain;
+  - down 13 and 21 IQ4_NL;
+  - everything else as M0rk-mix.
+  - Expected 8,932,121,888 B. Scored on S, T1 and T2 against M0rk-mix (verification) and against the comparators.
+- Reading: c1 is the 9 GB-tier development candidate if every promotion's share holds (c1 minus M0rk-mix has a CI below 0 on S and T2). It is frozen only after that, then T3 (Daniel).
