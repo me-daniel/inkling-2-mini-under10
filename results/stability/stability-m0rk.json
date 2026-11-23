@@ -1,0 +1,97 @@
+{
+ "model": "models/tmp/m0rk.gguf",
+ "thresholds": {
+  "distinct4_min": 0.3,
+  "repeat_run_max": 5,
+  "tool_drop_max": 1,
+  "gsm8k_drop_max": 4,
+  "cap_rise_max": 2
+ },
+ "gsm8k": {
+  "n": 30,
+  "correct": 30,
+  "capped": 0
+ },
+ "long_generations": [
+  {
+   "seed": 1,
+   "tokens": 2000,
+   "distinct4": 0.9896,
+   "repeat_run": 1
+  },
+  {
+   "seed": 2,
+   "tokens": 2000,
+   "distinct4": 0.9865,
+   "repeat_run": 1
+  },
+  {
+   "seed": 3,
+   "tokens": 2000,
+   "distinct4": 0.963,
+   "repeat_run": 1
+  },
+  {
+   "seed": 4,
+   "tokens": 2000,
+   "distinct4": 0.9869,
+   "repeat_run": 1
+  },
+  {
+   "seed": 5,
+   "tokens": 2000,
+   "distinct4": 0.9966,
+   "repeat_run": 1
+  },
+  {
+   "seed": 6,
+   "tokens": 2000,
+   "distinct4": 0.9953,
+   "repeat_run": 1
+  },
+  {
+   "seed": 7,
+   "tokens": 2000,
+   "distinct4": 0.9983,
+   "repeat_run": 1
+  },
+  {
+   "seed": 8,
+   "tokens": 2000,
+   "distinct4": 0.9934,
+   "repeat_run": 1
+  },
+  {
+   "seed": 9,
+   "tokens": 2000,
+   "distinct4": 0.9967,
+   "repeat_run": 1
+  },
+  {
+   "seed": 10,
+   "tokens": 2000,
+   "distinct4": 0.9971,
+   "repeat_run": 1
+  }
+ ],
+ "long_context": {
+  "prompt_tokens": 16359,
+  "found": true
+ },
+ "tool_calls": {
+  "n": 5,
+  "valid": 5
+ },
+ "other_languages": [
+  {
+   "chars": 308,
+   "letter_share": 0.828,
+   "ok": true
+  },
+  {
+   "chars": 293,
+   "letter_share": 0.802,
+   "ok": true
+  }
+ ]
+}

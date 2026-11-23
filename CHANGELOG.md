@@ -286,3 +286,7 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - S with the sibling's clean upstream build c661033 (contains 690b87d): 0.08713, top-1 87.91%. All 16 per-chunk KLs are identical to our patched build fcaddf97a. The score signature records the upstream binary's mtime, so the cache was not hit. M0rk carries no `.scale` tensors, and the loop patches touch no code path it uses.
 - v1-frame checks still open for M0rk: T3, the 7 stability checks, a load on LM Studio.
+
+## 23 Nov 2026, 04:40: stability battery on M0rk (measured, results/stability/verdict-m0rk.md)
+
+- The sibling's battery and thresholds, unchanged, judged against its Q8_0 reference run. **PASS, 7 of 7.** Lowest distinct 4-gram ratio 0.963 (reference 0.9894). Longest repeated-line run 1. Planted fact found at 16K. Tool calls 5 of 5. Non-English 2 of 2. GSM8K 30 of 30, 0 capped (a smoke test, not an accuracy estimate).
