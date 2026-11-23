@@ -7,7 +7,9 @@ The seconds column is nan: llama-perplexity logs carry no total time (wall time 
 
 from __future__ import annotations
 
+import os
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -42,14 +44,37 @@ def parse(log: Path) -> dict | None:
     }
 
 
+def model_state(log: Path) -> str:
+    """ok / stale / gone / unsigned: does the model file the .sig names still have the signed size and mtime?
+    Added 23 Nov after the code reviews: a score whose model was rebuilt later must not pass for the new file."""
+    sig = log.with_name(log.name + ".sig")
+    if not sig.exists():
+        return "unsigned"
+    f = sig.read_text().split()
+    if f and f[0] == "v2":
+        f = f[1:]
+    try:
+        path, size, mtime = f[0], int(f[1]), int(f[2])
+    except (IndexError, ValueError):
+        return "unsigned"
+    if not os.path.exists(path):
+        return "gone"
+    st = os.stat(path)
+    return "ok" if (st.st_size, int(st.st_mtime)) == (size, mtime) else "stale"
+
+
 def collect() -> list[dict]:
-    rows = [r for log in sorted((ROOT / "logs").glob("ppl-*.log")) if (r := parse(log))]
+    rows = []
+    for log in sorted((ROOT / "logs").glob("ppl-*.log")):
+        if r := parse(log):
+            r["model_state"] = model_state(log)
+            rows.append(r)
     out = ROOT / "results/kl.tsv"
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
-        f.write("run\tmean_kl\tse\tsame_top_p\tseconds\tper_chunk\n")
+        f.write("run\tmean_kl\tse\tsame_top_p\tseconds\tmodel_state\tper_chunk\n")
         for r in rows:
-            f.write(f"{r['run']}\t{r['mean_kl']:.6f}\t{r['se']:.6f}\t{r['same_top_p']:.3f}\t{r['seconds']:.1f}\t"
+            f.write(f"{r['run']}\t{r['mean_kl']:.6f}\t{r['se']:.6f}\t{r['same_top_p']:.3f}\t{r['seconds']:.1f}\t{r['model_state']}\t"
                     + ",".join(f"{x:.6f}" for x in r["per_chunk"]) + "\n")
     return rows
 

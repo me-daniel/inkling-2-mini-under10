@@ -21,20 +21,43 @@ gpu_wait() {
 }
 gpu_done() { [ -e "$LOCK" ] && [ "$(awk '{print $1}' "$LOCK")" = "$$" ] && rm -f "$LOCK"; return 0; }
 # score MODEL on SET (S, T1, T2) against the sibling's Q8_0 reference logits at P = 3 -> logs/ppl-NAME.log
-# extra args go to llama-perplexity (e.g. --chunks 8). Skips a run whose log already has a final KL.
+# Hardened 23 Nov after the Astra and Fable code reviews (reviews/2026-11-23-code-pipeline-*.md):
+# - the key binds model and reference (path, size, mtime, inode), the scorer binary AND its dylibs, and the extra
+#   arguments with their boundaries; it is taken again after gpu_wait, so a file replaced while waiting is caught;
+# - extra arguments may not override the model, text, reference, context or chunk count (--chunks is a no-op in
+#   KL mode: the reference .kld fixes the chunks);
+# - the run writes ppl-NAME.log.part, and only a log with a finite final KL and the expected chunk count for the set
+#   becomes ppl-NAME.log; the .sig is written before the GPU lock is released.
+# Runs from before 23 Nov keep their old key (path size mtime set args ref bin), accepted by _slegacy.
+_sfile() { _sf=$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1"); printf '%s %s' "$_sf" "$(stat -L -f '%z %m %i' "$_sf")"; }
+_sdylibs() { stat -f '%m' "$BIN"/llama-perplexity "$BIN"/*.dylib 2>/dev/null | cksum | cut -d' ' -f1; }
+_schunks() { case $1 in S|T1) echo 16 ;; T2) echo 5 ;; *) echo "" ;; esac; }
+_sok() { # log set: a finite final KL, no nan/inf chunk, and the expected last chunk index
+    grep -Eq 'Mean +KLD: +[0-9]+\.[0-9]+' "$1" || return 1
+    ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$1" || return 1
+    _sn=$(_schunks "$2"); [ -z "$_sn" ] && return 0
+    [ "$(grep -E '^ *[0-9]+ +[0-9.]+ ±' "$1" | tail -1 | awk '{print $1}')" = "$_sn" ]
+}
 score() { # name model set [extra...]; its variables are _s-prefixed so callers' loop variables survive
     _sname=$1 _smodel=$2 _sset=$3; shift 3
-    _slog="$L/ppl-$_sname.log"
-    # a cached log counts only for the same model file (path, size, mtime) and with every chunk finite
-    _sref="$SIB/models/logits/ref-$_sset-P3.kld"
-    _ssig="$(cd "$(dirname "$_smodel")" && pwd -P)/$(basename "$_smodel") $(stat -L -f '%z %m' "$_smodel") $_sset $* ref $(stat -L -f '%z %m' "$_sref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
-    if [ -f "$_slog" ] && grep -q 'Mean *KLD' "$_slog" && [ "$(cat "$_slog.sig" 2>/dev/null)" = "$_ssig" ] && ! grep -Eq '^ *[0-9]+ .*(nan|inf)' "$_slog"; then return 0; fi
-    gpu_wait; step "score $_sname"
+    for _sa in "$@"; do case $_sa in -m|--model|-f|--file|--kl-divergence-base|-c|--ctx-size|--chunks|--override-kv)
+        echo "score $_sname: '$_sa' is set by score() and may not be passed"; return 1 ;; esac; done
+    _slog="$L/ppl-$_sname.log"; _sref="$SIB/models/logits/ref-$_sset-P3.kld"
+    _skey() { printf 'v2 %s set %s args' "$(_sfile "$_smodel")" "$_sset"; printf ' [%s]' "$@"; printf ' ref %s bin %s' "$(_sfile "$_sref")" "$(_sdylibs)"; }
+    _slegacy="$(cd "$(dirname "$_smodel")" && pwd -P)/$(basename "$_smodel") $(stat -L -f '%z %m' "$_smodel") $_sset $* ref $(stat -L -f '%z %m' "$_sref") bin $(stat -f '%m' "$BIN/llama-perplexity")"
+    _scached() { [ -f "$_slog" ] && _sok "$_slog" "$_sset" && { [ "$(cat "$_slog.sig" 2>/dev/null)" = "$(_skey "$@")" ] || [ "$(cat "$_slog.sig" 2>/dev/null)" = "$_slegacy" ]; }; }
+    _scached "$@" && return 0
+    gpu_wait
+    _scached "$@" && { [ -n "${GPU_HOLD:-}" ] || gpu_done; return 0; }  # another process scored it while we waited
+    step "score $_sname"; _ssig=$(_skey "$@")
     _sctx=4096; [ "$_sset" = T2 ] && _sctx=2048
-    "$BIN/llama-perplexity" -m "$_smodel" -f "$ROOT/data/$_sset.txt" -c $_sctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
-        --kl-divergence-base "$SIB/models/logits/ref-$_sset-P3.kld" --kl-divergence "$@" > "$_slog" 2>&1 || { [ -n "${GPU_HOLD:-}" ] || gpu_done; echo "score $_sname FAILED, see $_slog"; return 1; }
+    if ! "$BIN/llama-perplexity" -m "$_smodel" -f "$ROOT/data/$_sset.txt" -c $_sctx -ngl 99 --override-kv "inkling2_loop.loop.count=int:3" \
+        --kl-divergence-base "$_sref" --kl-divergence "$@" > "$_slog.part" 2>&1 || ! _sok "$_slog.part" "$_sset"; then
+        [ -n "${GPU_HOLD:-}" ] || gpu_done; echo "score $_sname FAILED, see $_slog.part"; return 1
+    fi
+    [ "$(_skey "$@")" = "$_ssig" ] || { [ -n "${GPU_HOLD:-}" ] || gpu_done; echo "score $_sname: model or reference changed during the run"; return 1; }
+    echo "$_ssig" > "$_slog.sig.part"; mv "$_slog.part" "$_slog"; mv "$_slog.sig.part" "$_slog.sig"
     [ -n "${GPU_HOLD:-}" ] || gpu_done  # GPU_HOLD=1: the caller keeps the lock across scores
-    echo "$_ssig" > "$_slog.sig"
     grep -E 'Mean +KLD|Same top p' "$_slog" | tr '\n' ' '; echo
 }
 # CPU-heavy jobs (llama-quantize, GPTQ) hold 5-8 GB: start one only while at least 30% of memory is free

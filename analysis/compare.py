@@ -18,7 +18,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def load() -> dict[str, dict]:
     rows = csv.DictReader(open(ROOT / "results/kl.tsv"), delimiter="\t")
-    return {r["run"]: {"chunks": np.array([float(x) for x in r["per_chunk"].split(",")]), "top": float(r["same_top_p"])} for r in rows}
+    out, stale = {}, []
+    for r in rows:  # a run whose model file changed after scoring is left out, so using it fails loudly (23 Nov)
+        if r.get("model_state") == "stale":
+            stale.append(r["run"]); continue
+        out[r["run"]] = {"chunks": np.array([float(x) for x in r["per_chunk"].split(",")]), "top": float(r["same_top_p"])}
+    if stale:
+        print(f"left out, model file changed after scoring: {', '.join(stale)}", file=sys.stderr)
+    return out
 
 
 def paired(a: np.ndarray, b: np.ndarray, n_boot: int = 10000, seed: int = 0) -> tuple[float, float, float]:

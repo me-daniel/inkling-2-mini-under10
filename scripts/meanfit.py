@@ -60,6 +60,20 @@ def set_ls(t: Q, b: np.ndarray, ls: np.ndarray) -> np.ndarray:
 SPEC = {Q.IQ2_XXS: (66, 32, 16, _f_iq2), Q.IQ2_XS: (74, 16, 16, _f_iq2), Q.IQ2_S: (82, 16, 16, _f_iq2), Q.IQ1_S: (50, 32, 8, _f_iq1)}
 
 
+def scale_mask(t: Q) -> np.ndarray:
+    """Per-block byte mask of the scale bits set_ls may write (code review 23 Nov: enforce, per expert, that nothing
+    else changes)."""
+    m = np.zeros(SPEC[t][0], dtype=np.uint8)
+    if t == Q.IQ2_XXS:
+        m[2 + 8 * np.arange(8) + 7] = 0xF0
+    elif t in (Q.IQ2_XS, Q.IQ2_S):
+        off = 66 if t == Q.IQ2_XS else 74
+        m[off:off + 8] = 0xFF
+    elif t == Q.IQ1_S:
+        m[34 + 2 * np.arange(8) + 1] = 0x70  # bits 12-14 of each little-endian qh word
+    return m
+
+
 def refit_expert(t: Q, blocks: np.ndarray, w: np.ndarray, v: np.ndarray, m: np.ndarray) -> tuple[np.ndarray, float, float]:
     """blocks [R*nb, bytes], w [R, C] source weights, v, m [C]. -> (new blocks, err_before, err_after) in the model."""
     nbytes, sb, nlev, f = SPEC[t]
@@ -85,24 +99,30 @@ def refit_expert(t: Q, blocks: np.ndarray, w: np.ndarray, v: np.ndarray, m: np.n
     sig = x - y * ((P * x).sum(-1) / (1 + (P * y).sum(-1)))[:, None]                     # continuous optimum
     dd = np.broadcast_to(d, ls0.shape).reshape(R, -1)
     lev = f(np.arange(nlev))                                                              # [nlev]
-    ls = np.abs(sig[..., None] - dd[..., None] * lev).argmin(-1)                          # nearest level
-    for _ in range(2):  # coordinate descent on the discrete scale bits
+    l0 = ls0.reshape(R, -1)
+    # coordinates that carry no information (d = 0, or no weight in the objective) keep their bits (review 23 Nov)
+    idle = (dd == 0) | ((A == 0) & (P == 0))
+    ls = np.where(idle, l0, np.abs(sig[..., None] - dd[..., None] * lev).argmin(-1))     # nearest level as the seed
+    for _ in range(2):  # exact coordinate descent: every level of each sub-block scale is scored (8 or 16 of them)
         s = dd * f(ls); g = (P * s).sum(-1) - q
         for j in range(ls.shape[1]):
-            best_d, best_l = np.zeros(R), ls[:, j].copy()
-            for step in (-1, 1):
-                l2 = np.clip(ls[:, j] + step, 0, nlev - 1)
-                delta = dd[:, j] * (f(l2) - f(ls[:, j]))
-                de = A[:, j] * delta * delta + 2 * delta * (A[:, j] * s[:, j] - Rr[:, j]) + (g + P[:, j] * delta) ** 2 - g ** 2
-                better = de < best_d
-                best_d = np.where(better, de, best_d); best_l = np.where(better, l2, best_l)
-            delta = dd[:, j] * (f(best_l) - f(ls[:, j]))
-            g = g + P[:, j] * delta; s[:, j] = s[:, j] + delta; ls[:, j] = best_l
-    e0, e1 = err(sig0) + const, err(dd * f(ls)) + const
-    keep = e1 >= e0                                                                       # keep llama-quantize's bits unless strictly better
-    ls = np.where(keep[:, None], ls0.reshape(R, -1), ls)
+            delta = dd[:, j, None] * (lev[None, :] - f(ls[:, j])[:, None])               # [R, nlev]
+            de = (A[:, j, None] * delta * delta + 2 * delta * (A[:, j] * s[:, j] - Rr[:, j])[:, None]
+                  + (g[:, None] + P[:, j, None] * delta) ** 2 - (g ** 2)[:, None])
+            best = np.where(idle[:, j], ls[:, j], de.argmin(-1))
+            dl = dd[:, j] * (f(best) - f(ls[:, j]))
+            g = g + P[:, j] * dl; s[:, j] = s[:, j] + dl; ls[:, j] = best
+    # acceptance from the decoded residuals themselves (review 23 Nov: the expanded form cancels badly when v spans
+    # many orders of magnitude)
+    def direct(sc):
+        dw = (sc.reshape(R, -1, nsub)[..., None] * u).reshape(R, -1) - w
+        return (v.reshape(1, -1) * dw * dw).sum(-1) + ((m.reshape(1, -1) * dw).sum(-1)) ** 2
+    e0, e1 = direct(sig0), direct(dd * f(ls))
+    keep = ~(e1 < e0)                                                                     # keep llama-quantize's bits unless strictly better
+    ls = np.where(keep[:, None], l0, ls)
     e1 = np.where(keep, e0, e1)
     new = set_ls(t, blocks, ls.reshape(len(blocks), nsub))
+    assert not ((new ^ blocks) & ~scale_mask(t)).any(), "bits outside the scale fields changed"
     chk = dequantize(new, t).astype(np.float64).reshape(R, -1, nsub, sb)
     assert np.allclose(chk, (dd * f(ls)).reshape(R, -1, nsub)[..., None] * u, rtol=1e-5, atol=1e-12), "decode mismatch"
     return new, float(e0.sum()), float(e1.sum())
@@ -127,20 +147,25 @@ def main() -> None:
         t = src[n]; ty = t.tensor_type
         if ty not in SPEC:
             print(f"{n}: {ty.name} not supported, skipped", file=sys.stderr); continue
+        if n.replace(".weight", ".scale") in src:  # review 23 Nov: the fit would be in the wrong units
+            raise SystemExit(f"{n} has a per-expert .scale; scaled sources are not supported")
+        assert ref[n].tensor_type == Q.BF16, f"reference {n} is {ref[n].tensor_type.name}, not BF16"
         cnt = np.asarray(im[n + ".counts"].data, dtype=np.float64).reshape(-1)
         s1 = np.asarray(im[n + ".in_sum"].data, dtype=np.float64).reshape(len(cnt), -1)
         s2 = np.asarray(im[n + ".in_sum2"].data, dtype=np.float64).reshape(len(cnt), -1)
         raw = np.asarray(t.data); E = raw.shape[0]
         wsrc = (np.asarray(ref[n].data).view(np.uint16).astype(np.uint32) << 16).view(np.float32)
         out, tot0, tot1 = [], 0.0, 0.0
+        changed = np.zeros(SPEC[ty][0], dtype=bool)
         for e in range(E):
             c = max(cnt[e], 1.0); m = s1[e] / c; v = np.maximum(s2[e] / c - m * m, 0)
             blocks = np.ascontiguousarray(raw[e]).reshape(-1, SPEC[ty][0])
             new, e0, e1 = refit_expert(ty, blocks, wsrc[e], v, m)
-            changed = np.flatnonzero((new != blocks).any(0))
+            changed |= (new != blocks).any(0)
             out.append(new.reshape(raw[e].shape)); tot0 += e0 * cnt[e]; tot1 += e1 * cnt[e]
         wr.add_tensor(n, np.stack(out), raw_dtype=ty)
-        print(f"{n}\t{ty.name}\tmodel error after/before {tot1 / tot0:.4f}\tbyte columns touched {changed.tolist()[:12]}", flush=True)
+        ratio = f"{tot1 / tot0:.4f}" if tot0 > 0 else "n/a (no tokens)"
+        print(f"{n}\t{ty.name}\tmodel error after/before {ratio}\tbyte columns touched {np.flatnonzero(changed).tolist()}", flush=True)
     wr.write_header_to_file(); wr.write_kv_data_to_file(); wr.write_tensors_to_file(); wr.close()
     import os; os.replace(a.out + ".part", a.out)
 

@@ -48,6 +48,8 @@ def layers(spec: dict) -> dict[int, str]:
     for k, v in spec.items():
         lo, _, hi = k.partition("-")
         for l in range(int(lo), int(hi or lo) + 1):
+            if l in out:  # code review 23 Nov: an overwritten duplicate used to pass the coverage check
+                raise SystemExit(f"layer {l} is set twice in {spec}")
             out[l] = v
     if sorted(out) != list(range(24)):
         raise SystemExit(f"layers {sorted(out)} do not cover 0-23 exactly once")
@@ -84,17 +86,34 @@ def plan(spec: dict) -> tuple[list[tuple[Path, str]], int, list[tuple[Path, str]
         dsrc = DOWN[dn[l]](l) if dn[l] in DOWN else M / f"down/{dn[l]}-L{l}.gguf"  # per-layer donor of ours
         takes.append((dsrc, rf"^blk\.{l}\.ffn_down_exps\.weight$")); taken[n] = dsrc
     import re
+    # code review 23 Nov: a donor weight whose expert .scale would not come along (or a base .scale left on a weight
+    # from an unscaled donor) changes the expert's amplitude silently; only the "ud" gate_up path carries its scale.
+    for n, src in taken.items():
+        sc = n.replace(".weight", ".scale")
+        carried = any(re.search(rx, sc) for _, rx in adds)
+        if sc in _names(src) and not carried:
+            raise SystemExit(f"{n}: donor {src.name} has {sc}, which this plan would drop")
+        if sc in _names(BASE) and src != BASE and not carried:
+            raise SystemExit(f"{n}: the base carries {sc}, but donor {src.name} replaces the weight without one")
     ne = spec.get("ne", {})
     base_names = [t.name for t in gguf.GGUFReader(BASE).tensors]
+    owner: dict[str, str] = {}
     for group, lvl in ne.items():
         takes.append((NE[lvl], NE_RE[group]))
         for n in base_names:
             if re.search(NE_RE[group], n):
-                taken[n] = NE[lvl]
+                if n in owner:  # splice takes the first match, this planner the last: refuse overlaps
+                    raise SystemExit(f"{n} matches both ne groups {owner[n]} and {group}")
+                owner[n] = group; taken[n] = NE[lvl]
     for n in base_names:
         size += nbytes(taken.get(n, BASE), n)
     overhead = BASE.stat().st_size - sum(nbytes(BASE, n) for n in base_names)
     return takes, size + overhead, adds
+
+
+def divmod_stat(f: str) -> tuple[int, int]:
+    st = Path(f).stat()
+    return st.st_size, int(st.st_mtime)
 
 
 def main() -> None:
@@ -106,22 +125,37 @@ def main() -> None:
     args = ap.parse_args()
     spec = json.loads(Path(args.spec).read_text())
     takes, size, adds = plan(spec)
+    # code review 23 Nov: rebuild unless OUT exists with a manifest matching the spec and every input's size and
+    # mtime; never write onto an input; write OUT.part and rename only after splice --verify succeeded.
+    out = Path(args.out)
+    inputs = sorted({str(BASE)} | {str(d) for d, _ in takes + adds})
+    manifest = {"spec": spec, "inputs": {f: list(divmod_stat(f)) for f in inputs}}
+    mpath = Path(str(out) + ".manifest.json")
+    if out.exists() and mpath.exists() and json.loads(mpath.read_text()) == manifest:
+        print(f"{out} is up to date with its spec and inputs"); return
+    if out.exists() and any(Path(f).exists() and out.samefile(f) for f in inputs):
+        raise SystemExit(f"{out} is one of the inputs")
     print(f"{Path(args.spec).stem}: predicted {size:,} bytes, limit {LIMIT:,}, margin {LIMIT - size:+,}")
     if args.dry:
         return
     if size > LIMIT and not args.over:
         raise SystemExit("over the limit")
-    cmd = [sys.executable, "-I", str(SIB / "scripts/splice.py"), str(BASE), args.out]
+    part = str(out) + ".part"
+    cmd = [sys.executable, "-I", str(SIB / "scripts/splice.py"), str(BASE), part]
     for donor, rx in takes:
         cmd += ["--take", str(donor), rx]
     for donor, rx in adds:
         cmd += ["--add", str(donor), rx]
-    subprocess.run(cmd + ["--verify"], check=True, stdout=open(args.out + ".splice.log", "w"))
-    real = Path(args.out).stat().st_size
+    try:
+        subprocess.run(cmd + ["--verify"], check=True, stdout=open(args.out + ".splice.log", "w"))
+    except subprocess.CalledProcessError:
+        Path(part).unlink(missing_ok=True); raise SystemExit("splice or its verify failed; nothing written to " + args.out)
+    real = Path(part).stat().st_size
     print(f"built {args.out}: {real:,} bytes (predicted {size:,})")
     if real > LIMIT and not args.over:
-        Path(args.out).unlink()
+        Path(part).unlink()
         raise SystemExit("built file is over the limit; deleted")
+    mpath.unlink(missing_ok=True); Path(part).replace(out); mpath.write_text(json.dumps(manifest))
 
 
 if __name__ == "__main__":

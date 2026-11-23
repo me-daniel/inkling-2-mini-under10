@@ -390,3 +390,25 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Stability battery: **PASS, 7 of 7.** 4-gram ratio 0.9791 (reference 0.9894), repeat run 1, fact found, tools 5/5, non-English 2/2, GSM8K 30/30 with 0 capped.
 - Speed, c1 and M0rk back to back with both locks: c1 pp512 267.99 ± 2.85, tg128 21.61 ± 0.03. M0rk 268.56 ± 2.52, 21.90 ± 0.10. The 446 MB of promotions cost no measurable speed. Against UD-IQ2_XXS's quiet bench (06:34, 128.68 / 12.44), c1 is about 2.1x / 1.7x, from different sessions.
 - Open for a release of c1: T3 (Daniel's approval of the sibling's amendment 1 tokens, or a fresh set of our own), Daniel's release decision, and a load test in LM Studio.
+
+## 23 Nov 2026, 10:30: code review by Astra and Fable, fixes (reviews/2026-11-23-code-pipeline-*.md)
+
+- Daniel's request, in his words: "let Astra and Fable do the code review and then ask me if something is still left. no hard release limitations bound to my code review."
+- Neither reviewer found a bug in the numerical core that changes the bytes we built. Their findings are in resume, caching, provenance, locks and edge cases.
+- Fixed here:
+  - score(): the key binds model and reference (with inode), the dylibs and the argument boundaries, and is re-checked after gpu_wait; identity arguments are refused; the log is published atomically with validation.
+  - kl.tsv: a model_state column, and compare.py leaves out stale runs.
+  - assemble.py: an atomic write, an alias guard, a manifest check for freshness, and refusals for duplicate layers, ne overlaps and dropped .scale.
+  - degain2.py: the reference .scale, target checks, rows left alone counted, the reached gain recomputed, BF16 asserted.
+  - meanfit.py: exact level scan, acceptance from decoded residuals, idle coordinates kept, scale-bit-only asserted per expert, scaled sources refused.
+  - tests/test_meanfit.py: Astra's two counterexamples.
+- Checked:
+  - Headline files hash to their recorded sha256, and scores are signed against them.
+  - One gap: m0rk-S was signed against an earlier write of m0rk.gguf (re-assembled 22 Nov 12:38, not logged). Rescore running.
+  - The fixed meanfit gives the same error ratio on real data (6,448 bytes of 132.7M differ), so c1 is not rebuilt.
+  - The fixed degain2 reproduces M0rk's donor byte for byte.
+- Open:
+  - The lock race (both repos, proposed to the sibling).
+  - KL rounding in per-chunk reconstruction (bounded, no verdict flips).
+  - A content digest for references.
+  - The findings in the sibling's refine-codes.py, gram-error.py and splice.py, sent to it.

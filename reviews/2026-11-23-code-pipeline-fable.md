@@ -38,4 +38,4 @@ Limits: decoders were checked against gguf-py; the C struct order and dequantize
 
 ## Response
 
-Written after Astra's review (reviews/2026-11-23-code-pipeline-astra.md), point by point, in the Response section below.
+See the joint Response in reviews/2026-11-23-code-pipeline-astra.md (Fable numbers in brackets).
