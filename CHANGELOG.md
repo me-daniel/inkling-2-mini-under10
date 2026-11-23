@@ -443,3 +443,18 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 
 - splice.py at the sibling's ca5b1e4 (code-review fixes: empty takes exit, atomic write, raw-byte verify) rebuilds c1 from configs/c1.json to the same sha256, 9975a56d... MATCH. Our callers need no change.
 - Note: splice.py now writes a side JSON named after its output path, so assemble.py's OUT.part leaves OUT.part.json. Harmless, not renamed yet.
+
+## 23 Nov 2026, 18:25: battery A off-domain result (measured, results/batA/compare.txt)
+
+- 7 files x 4 domains, 32 chunks of 1,024 tokens each, P = 3, the sibling's Q8_0 logits. All 28 runs are signed against the current model files.
+- Reading 1, the Mac-track claim: **holds in every domain.** c1 minus GSQ-RCO-IQ2_XS: python -0.01058, rust -0.01041, german -0.01959, math -0.00926. c1 minus AD-IQ2_M: -0.01709, -0.01072, -0.02900, -0.01757. All CIs are below 0.
+- Reading 2: not applicable, because c1r failed its T2 rule. Descriptive: c1r minus c1 is +0.00064, +0.00074, -0.00056 and -0.00048, every CI spanning 0. The refiner's S/T1 gain does not reach code, German or maths, so a refiner rerun on c1's own forward is not pursued.
+- Reading 3, descriptive, c1/UD ratios:
+
+  | | T1 | T2 | python | rust | german | math |
+  |---|---|---|---|---|---|---|
+  | c1/UD-IQ2_XXS | 1.015 | 1.144 | 1.058 | 1.027 | 1.076 | 1.129 |
+  | c1/UD-Q2_K_XL | 1.309 | 1.400 | 1.335 | 1.276 | 1.324 | 1.386 |
+
+  The gap does not grow off-domain for c1. The sibling's v2m was at 1.20-1.30 against UD there (its amendment 15). Inferred: v2m's off-domain loss comes from its own calibration-fitted encodings, which c1 does not share (c1 is ggml-org imatrix plus mean-aware refit). Untested.
+- c1 to UD-IQ2_XXS: python and rust within noise (CIs span 0), german and math UD better. The claim stays the Mac track, with the gap to Unsloth stated.
