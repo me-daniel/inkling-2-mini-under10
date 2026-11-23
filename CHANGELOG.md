@@ -281,3 +281,8 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Reading:
   - If a variant differs from M0 on T2 by more than 0.003 with its CI excluding 0, the imatrix domain is a lever for reasoning traces. The next step is then an imatrix that includes model-generated reasoning traces, disjoint from T2's GSM8K items.
   - If both are within ±0.002, the T2 gap is the encoder's, as on S, and the domain route is dropped.
+
+## 23 Nov 2026, 04:10: M0rk on unpatched upstream llama.cpp (measured)
+
+- S with the sibling's clean upstream build c661033 (contains 690b87d): 0.08713, top-1 87.91%. All 16 per-chunk KLs are identical to our patched build fcaddf97a. The score signature records the upstream binary's mtime, so the cache was not hit. M0rk carries no `.scale` tensors, and the loop patches touch no code path it uses.
+- v1-frame checks still open for M0rk: T3, the 7 stability checks, a load on LM Studio.
