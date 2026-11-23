@@ -1,0 +1,5 @@
+T1 cand vs UD-Q2_K_XL: KL 0.08007 vs 0.05104, diff +0.02903 [+0.02677, +0.03141], top-1 88.68% vs 90.84% -> not better
+T1 cand vs GSQ-RCO-IQ2_XS: KL 0.08007 vs 0.08898, diff -0.00891 [-0.01101, -0.00685], top-1 88.68% vs 88.29% -> better
+T2 cand vs UD-Q2_K_XL: KL 0.05934 vs 0.03492, diff +0.02442 [+0.02304, +0.02660], top-1 91.44% vs 93.74% -> not better
+T2 cand vs GSQ-RCO-IQ2_XS: KL 0.05934 vs 0.05573, diff +0.00361 [+0.00050, +0.00630], top-1 91.44% vs 91.69% -> not better
+quality gate: FAIL

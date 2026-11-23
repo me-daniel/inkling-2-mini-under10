@@ -245,3 +245,10 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Reading: peak footprint (memory not backed by the model file: KV, compute and scratch) is the same for all-Metal files of this model at a given depth, 2.48 GB at 16K. It grows about 1.03 GB per extra 8K-16K of context. Max RSS counts only touched pages of the mapped weights, so it is not comparable across files.
 - Size cap by the pre-registered rule (weights plus M0rk's measured 16K overhead under 11,453,250,000 B): 11,453,250,000 - 2,477,122,008 = **8,976,127,992 B**. Headroom over M0rk: 489,913,048 B. GSQ-RCO-IQ2_XS (8,949,801,504 B) is under it. UD-Q2_K_XL is 162,588,616 B over, but 2.10 GB of its weights run on the CPU, so the GPU budget does not bind it the same way (it uses about 11.71 GB of system memory at 16K, inferred from bytes plus footprint).
 - At 32K, M0rk needs about 12.0 GB (8.49 + 3.52), over the default GPU budget. So the 16 GB claim is 16K, not 32K.
+
+## 23 Nov 2026, 01:35: step 2 KL for the 9 GB comparators (measured, results/step2/compare.txt)
+
+- KL S / T1 / T2: UD-Q2_K_XL 0.05546 / 0.05104 / 0.03492. GSQ-RCO-IQ2_XS 0.09389 / 0.08898 / 0.05573. M0rk 0.08713 / 0.08007 / 0.05934.
+- M0rk minus GSQ-RCO-IQ2_XS: T1 -0.00891 [-0.01101, -0.00685], top-1 88.68% vs 88.29%. T2 +0.00361 [+0.00050, +0.00630], top-1 91.44% vs 91.69%. M0rk minus UD-Q2_K_XL: T1 +0.02903, T2 +0.02442.
+- AD-IQ1_M: S 0.18241, T1 0.17574, T2 0.12621.
+- Reading: GSQ-RCO is 463,586,560 B larger than M0rk and loses on prose but wins on reasoning traces. A 9 GB candidate (cap 8,976,127,992 B) must beat GSQ-RCO on T2 as well. M0rk's own Mac-track set (at or under 8.49 GB) does not contain GSQ-RCO.
