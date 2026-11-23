@@ -477,3 +477,19 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   3. Descriptive: c1 and M0rk against UD-IQ2_XXS (difference, CI, ratio), for the card's stated gap.
 - Failure plan: a file that fails its test is not released on the Mac track. If c1 loses only to GSQ-RCO-IQ2_XS (which is larger), the claim narrows to "at or under 8.67 GB", stated as such.
 - Hash note: the sibling rewrote two unpushed commits before its push, to remove a local path. Its 9b03ba5 (lockf) is now 1d89dab, and ca5b1e4 (splice.py fixes) is now 27fee5f, with identical trees for the files we use (git diff empty). Entries above keep the hashes as they were written. lib.sh's comment uses the new one.
+
+## 23 Nov 2026, 23:50: T3 result (measured, results/t3/compare.txt)
+
+- 8 files on T3, 16 chunks each. Every hash was recorded before scoring (results/t3/sha.txt). c1 and M0rk are the frozen files.
+- **Test 1, c1 Mac track at the 9 GB tier: PASS.** c1 0.07034, top-1 89.08%. Against each comparator, c1 minus comparator [CI]:
+  - GSQ-RCO-IQ2_XS: -0.02332 [-0.02628, -0.02034].
+  - AD-IQ2_M: -0.02883 [-0.03196, -0.02563].
+  - AD-IQ2_XXS-Q2: -0.05355.
+  - AD-IQ1_M: -0.10938.
+  - AD-IQ1_S: -0.14271.
+  - Every CI is below 0, and top-1 is higher in every comparison.
+- **Test 2, M0rk Mac track at 8.49 GB: PASS.** M0rk 0.08568, top-1 88.19%. Against AD-IQ2_XXS-Q2 -0.03821 [-0.04187, -0.03431], AD-IQ1_M -0.09404, AD-IQ1_S -0.12737. Every CI is below 0, and top-1 is higher.
+- Reading 3, the gap to UD-IQ2_XXS (descriptive):
+  - c1 +0.00128 [-0.00045, +0.00292], ratio 1.019, top-1 89.08% vs 89.50%. A tie on held-out prose within noise. On T2 and the off-domain texts, UD stays ahead (ratios 1.03-1.14).
+  - M0rk +0.01662 [+0.01442, +0.01872], ratio 1.241.
+- Both release tests the v1 frame asks for are now met, for both files: Mac track on T1, T2 and T3, stability 7/7, identical score on unpatched upstream, and 16K fit. M0rk's stability and upstream checks are from 22-23 Nov. What remains is Daniel's release decision and the load test in LM Studio.
