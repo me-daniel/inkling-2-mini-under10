@@ -258,3 +258,14 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Because GSQ-RCO wins on T2 (01:35), each single promotion is also scored on T2, used as development data, paired against M0rk's T2 run (final-cand-T2-P3).
 - A promotion enters the combination only if its S CI is below 0 (as registered) and its T2 point estimate is below 0. The ranking stays by S KL per byte.
 - The combination's cap is 8,976,127,992 B (00:55). The frozen candidate still gets T1, T2 and a fresh T3.
+
+## 23 Nov 2026, 03:35: Mac-track comparators at or under M0rk's size (measured, results/step3/compare-iq1.txt)
+
+- KL S / T1 / T2: AD-IQ1_M 0.18241 / 0.17574 / 0.12621; AD-IQ1_S 0.21339 / 0.20504 / 0.14737; UD-IQ1_S (7,764,293,056 B, 1 NVFP4) 0.09214 / 0.08880 / 0.05194.
+- M0rk minus, T1 / T2:
+  - AD-IQ1_M -0.09567 / -0.06687
+  - AD-IQ1_S -0.12497 / -0.08803
+  - UD-IQ1_S -0.00873 [-0.01196, -0.00621] / **+0.00740 [+0.00513, +0.00935]**
+  - with AD-IQ2_XXS-Q2 from 22 Nov: -0.04051 / -0.02099
+- **Mac-track gate at M0rk's size: PASS.** M0rk beats every same-weights all-Metal file at or under 8,486,214,944 B (AD-IQ2_XXS-Q2, AD-IQ1_M, AD-IQ1_S) on T1 and T2 with CIs below 0 and higher top-1. Speed: 1.83x / 1.52x (pp512 / tg128) against UD-IQ2_XXS (21:15 bench). Release is Daniel's decision, and the v1 frame also asks for T3, the stability checks and an unpatched-upstream score first.
+- The weakness is reasoning traces: on T2, UD-IQ1_S (0.72 GB smaller), UD-IQ1_M and GSQ-RCO all beat M0rk, while M0rk wins T1 against UD-IQ1_S and GSQ-RCO. Unsloth calibrates on conversation data, and GSQ-RCO on a 2.05M-token set of its own. Our refit read ggml-org's imatrix. The night's finding that the imatrix does not matter (< 0.0004) was measured on S, prose only. Open: does calibration domain move T2?
