@@ -290,3 +290,14 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 ## 23 Nov 2026, 04:40: stability battery on M0rk (measured, results/stability/verdict-m0rk.md)
 
 - The sibling's battery and thresholds, unchanged, judged against its Q8_0 reference run. **PASS, 7 of 7.** Lowest distinct 4-gram ratio 0.963 (reference 0.9894). Longest repeated-line run 1. Planted fact found at 16K. Tool calls 5 of 5. Non-English 2 of 2. GSM8K 30 of 30, 0 capped (a smoke test, not an accuracy estimate).
+
+## 23 Nov 2026, 06:15: pre-registration, step 3d (M0rk's refit on mixed-domain statistics)
+
+- Why: the sibling's amendment 13 (b1a8e51 in its repo) moved its refiner's T2 share of the gap from 0.18 to 0.70 by changing only the calibration to `data/calib-mix.txt`. That file is WikiText-2 train, chat-templated conversations and prose, 300 x 512 tokens, with --parse-special. M0rk's refit reads per-expert E[x] and Var x from ggml-org's imatrix.
+- Build, M0rk-mix:
+  - Capture an imatrix (our llama-imatrix, which stores in_sum and in_sum2) on the sibling's cand.gguf at P = 3, on the sibling's calib-mix.txt: --chunks 300 -c 512 --parse-special. The file has 0 shared 13-grams with S, T1, T2 and T3 (sibling `results/data.md`).
+  - Then M0rk's recipe unchanged: mean-aware refit of the same llama-quantize gate_up pools, then each row back to its pool's gain. Same downs and non-expert tensors.
+  - Only the refit's statistics change, and the codes stay those of M0rk, so the run isolates the domain of the statistics. Size equals M0rk's.
+- Reading, paired against M0rk on S, T1 and T2 (all seen, development):
+  - Adopt the mixed statistics if T2 has its CI below 0 and S does not rise by more than 0.001.
+  - If T2's CI includes 0, the domain of the refit statistics is not the lever for M0rk's T2 gap. The next suspect is then the domain of the codes' imatrix (step 3c).
