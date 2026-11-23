@@ -269,3 +269,15 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - with AD-IQ2_XXS-Q2 from 22 Nov: -0.04051 / -0.02099
 - **Mac-track gate at M0rk's size: PASS.** M0rk beats every same-weights all-Metal file at or under 8,486,214,944 B (AD-IQ2_XXS-Q2, AD-IQ1_M, AD-IQ1_S) on T1 and T2 with CIs below 0 and higher top-1. Speed: 1.83x / 1.52x (pp512 / tg128) against UD-IQ2_XXS (21:15 bench). Release is Daniel's decision, and the v1 frame also asks for T3, the stability checks and an unpatched-upstream score first.
 - The weakness is reasoning traces: on T2, UD-IQ1_S (0.72 GB smaller), UD-IQ1_M and GSQ-RCO all beat M0rk, while M0rk wins T1 against UD-IQ1_S and GSQ-RCO. Unsloth calibrates on conversation data, and GSQ-RCO on a 2.05M-token set of its own. Our refit read ggml-org's imatrix. The night's finding that the imatrix does not matter (< 0.0004) was measured on S, prose only. Open: does calibration domain move T2?
+
+## 23 Nov 2026, 03:45: pre-registration, step 3c (does the imatrix domain move T2?)
+
+- Diagnostic, development data only. Rebuild three files that differ only in the imatrix of their gate_up codes:
+  - M0: ggml-org's imatrix.
+  - m0-imat-mine: our capture on calib-fit, prose plus 137 conversations.
+  - m0-imat-bart: bartowski's imatrix.
+  - All three keep the same downs and non-expert tensors. On S they differed by less than 0.0004.
+- Score each on T2 and pair against M0.
+- Reading:
+  - If a variant differs from M0 on T2 by more than 0.003 with its CI excluding 0, the imatrix domain is a lever for reasoning traces. The next step is then an imatrix that includes model-generated reasoning traces, disjoint from T2's GSM8K items.
+  - If both are within ±0.002, the T2 gap is the encoder's, as on S, and the domain route is dropped.
