@@ -1,0 +1,6 @@
+| model                          |       size |     params | backend    | threads |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
+| inkling2_loop ?B Q8_0          |   8.31 GiB |    26.07 B | MTL,BLAS   |       5 |           pp512 |        267.99 ± 2.85 |
+| inkling2_loop ?B Q8_0          |   8.31 GiB |    26.07 B | MTL,BLAS   |       5 |           tg128 |         21.61 ± 0.03 |
+
+build: fcaddf97a (9)

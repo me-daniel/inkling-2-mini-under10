@@ -1,0 +1,97 @@
+{
+ "model": "models/tmp/c1.gguf",
+ "thresholds": {
+  "distinct4_min": 0.3,
+  "repeat_run_max": 5,
+  "tool_drop_max": 1,
+  "gsm8k_drop_max": 4,
+  "cap_rise_max": 2
+ },
+ "gsm8k": {
+  "n": 30,
+  "correct": 30,
+  "capped": 0
+ },
+ "long_generations": [
+  {
+   "seed": 1,
+   "tokens": 2000,
+   "distinct4": 0.9939,
+   "repeat_run": 1
+  },
+  {
+   "seed": 2,
+   "tokens": 2000,
+   "distinct4": 0.9933,
+   "repeat_run": 1
+  },
+  {
+   "seed": 3,
+   "tokens": 2000,
+   "distinct4": 0.9942,
+   "repeat_run": 1
+  },
+  {
+   "seed": 4,
+   "tokens": 2000,
+   "distinct4": 0.9976,
+   "repeat_run": 1
+  },
+  {
+   "seed": 5,
+   "tokens": 2000,
+   "distinct4": 0.9827,
+   "repeat_run": 1
+  },
+  {
+   "seed": 6,
+   "tokens": 2000,
+   "distinct4": 0.9952,
+   "repeat_run": 1
+  },
+  {
+   "seed": 7,
+   "tokens": 2000,
+   "distinct4": 0.9791,
+   "repeat_run": 1
+  },
+  {
+   "seed": 8,
+   "tokens": 2000,
+   "distinct4": 0.9937,
+   "repeat_run": 1
+  },
+  {
+   "seed": 9,
+   "tokens": 2000,
+   "distinct4": 0.9961,
+   "repeat_run": 1
+  },
+  {
+   "seed": 10,
+   "tokens": 2000,
+   "distinct4": 0.993,
+   "repeat_run": 1
+  }
+ ],
+ "long_context": {
+  "prompt_tokens": 16359,
+  "found": true
+ },
+ "tool_calls": {
+  "n": 5,
+  "valid": 5
+ },
+ "other_languages": [
+  {
+   "chars": 294,
+   "letter_share": 0.844,
+   "ok": true
+  },
+  {
+   "chars": 262,
+   "letter_share": 0.805,
+   "ok": true
+  }
+ ]
+}

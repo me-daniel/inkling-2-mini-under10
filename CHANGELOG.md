@@ -380,3 +380,13 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Refiner used read-only: sibling repo at 7a4d0de, scripts/refine-codes.py sha256 1991258126ea616dd0e1f487405bc0f6cf019ea3e4fbf4235569c991e2e4a0f0, its helper scripts/gram-error.py sha256 c02e74d384fae116aac9e5b7d816411c1e4487a74180412ff44be7cbadbf1760. Uncommitted changes to the two files: 0. The sibling will not edit them during the run.
 - Release rule: Daniel has not reviewed refine-codes.py yet. No result from it counts toward a release before that review, so c1r can at most become a candidate pending review. c1 is not affected.
 - Known caveat (sibling, inferred): the Grams come from cand.gguf's forward, not c1's. c1's early layers are IQ1_S, so its later layers see inputs further from cand's than v2a's did. If c1r disappoints, check this mismatch first.
+
+## 23 Nov 2026, 09:00: c1 release-frame checks (measured, results/c1/)
+
+- Peak memory (`/usr/bin/time -l`, llama-bench at depth):
+  - 16K: footprint 2,476,008,208 B. Weights plus footprint 11,408,130,096 B, under the 11,453,250,000 B default GPU budget of a 16 GB Mac by 45 MB.
+  - 32K: footprint 3,528,091,176 B, over the budget. The fit claim is 16K.
+- Unpatched upstream c661033: S 0.07209, identical to our build.
+- Stability battery: **PASS, 7 of 7.** 4-gram ratio 0.9791 (reference 0.9894), repeat run 1, fact found, tools 5/5, non-English 2/2, GSM8K 30/30 with 0 capped.
+- Speed, c1 and M0rk back to back with both locks: c1 pp512 267.99 ± 2.85, tg128 21.61 ± 0.03. M0rk 268.56 ± 2.52, 21.90 ± 0.10. The 446 MB of promotions cost no measurable speed. Against UD-IQ2_XXS's quiet bench (06:34, 128.68 / 12.44), c1 is about 2.1x / 1.7x, from different sessions.
+- Open for a release of c1: T3 (Daniel's approval of the sibling's amendment 1 tokens, or a fresh set of our own), Daniel's release decision, and a load test in LM Studio.
