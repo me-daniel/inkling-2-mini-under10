@@ -346,3 +346,19 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - everything else as M0rk-mix.
   - Expected 8,932,121,888 B. Scored on S, T1 and T2 against M0rk-mix (verification) and against the comparators.
 - Reading: c1 is the 9 GB-tier development candidate if every promotion's share holds (c1 minus M0rk-mix has a CI below 0 on S and T2). It is frozen only after that, then T3 (Daniel).
+
+## 23 Nov 2026, 08:20: c1 result (measured, results/step3/c1.txt, c1-compare.txt)
+
+- c1: 8,932,121,888 B, sha256 9975a56dbf2e2bcd91b7c56ff98ef59f0840cdc51d29a8980c0f67b4707531b0, every tensor in a Metal type. KL S / T1 / T2 = 0.07209 / 0.06683 / 0.04889, top-1 89.03% / 89.67% / 92.14%.
+- Verification against the base M0rk-mix: S -0.01216 [-0.01354, -0.01093], T1 -0.01100 [-0.01252, -0.00949], T2 -0.01020 [-0.01222, -0.00739]. The five promotions add up, as the sum of the single effects predicted (about -0.012 on S).
+- **Mac track at the 9 GB tier: PASS.** c1 beats every same-weights all-Metal file at or under the cap on T1 and T2, with CIs below 0 and higher top-1.
+  - GSQ-RCO-IQ2_XS (8,949,801,504 B, larger than c1): T1 -0.02215, T2 -0.00684.
+  - AD-IQ2_M: T1 -0.02879, T2 -0.01867.
+  - AD-IQ2_XXS-Q2, AD-IQ1_M, AD-IQ1_S: T1 -0.054 to -0.138, T2 -0.031 to -0.098.
+- Context, not all-Metal:
+  - UD-IQ2_XXS (8.49 GB): T1 +0.00100 [-0.00092, +0.00280] (tie), T2 +0.00617.
+  - UD-IQ1_M: T1 -0.00913, T2 +0.00583.
+  - UD-IQ1_S: T1 -0.02197, T2 -0.00305 with top-1 92.14% vs 92.71%.
+  - UD-Q2_K_XL: T1 +0.01579, T2 +0.01397.
+- T1 and T2 were used in development (the T2 promotion amendment, the M0rk-mix base decision), so these are development readings. A release claim needs T3 (Daniel).
+- c1 is frozen as the 9 GB-tier candidate at this sha256. Next, the v1-frame checks on c1: peak memory at 16K, the unpatched-upstream S score, the stability battery and the quiet speed bench.

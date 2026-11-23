@@ -1,0 +1,19 @@
+T1 c1 vs GSQ-RCO-IQ2_XS: KL 0.06683 vs 0.08898, diff -0.02215 [-0.02501, -0.01931], top-1 89.67% vs 88.29% -> better
+T1 c1 vs AD-IQ2_M: KL 0.06683 vs 0.09562, diff -0.02879 [-0.03246, -0.02541], top-1 89.67% vs 87.73% -> better
+T1 c1 vs AD-IQ2_XXS-Q2: KL 0.06683 vs 0.12058, diff -0.05375 [-0.06093, -0.04763], top-1 89.67% vs 86.38% -> better
+T1 c1 vs AD-IQ1_M: KL 0.06683 vs 0.17574, diff -0.10891 [-0.11999, -0.09882], top-1 89.67% vs 83.95% -> better
+T1 c1 vs AD-IQ1_S: KL 0.06683 vs 0.20504, diff -0.13821 [-0.15204, -0.12525], top-1 89.67% vs 82.76% -> better
+T1 c1 vs UD-IQ1_S: KL 0.06683 vs 0.08880, diff -0.02197 [-0.02594, -0.01862], top-1 89.67% vs 88.51% -> better
+T1 c1 vs UD-IQ2_XXS: KL 0.06683 vs 0.06583, diff +0.00100 [-0.00092, +0.00280], top-1 89.67% vs 89.88% -> not better
+T1 c1 vs UD-IQ1_M: KL 0.06683 vs 0.07596, diff -0.00913 [-0.01215, -0.00629], top-1 89.67% vs 89.46% -> better
+T1 c1 vs UD-Q2_K_XL: KL 0.06683 vs 0.05104, diff +0.01579 [+0.01391, +0.01772], top-1 89.67% vs 90.84% -> not better
+T2 c1 vs GSQ-RCO-IQ2_XS: KL 0.04889 vs 0.05573, diff -0.00684 [-0.00898, -0.00470], top-1 92.14% vs 91.69% -> better
+T2 c1 vs AD-IQ2_M: KL 0.04889 vs 0.06756, diff -0.01867 [-0.02184, -0.01476], top-1 92.14% vs 91.48% -> better
+T2 c1 vs AD-IQ2_XXS-Q2: KL 0.04889 vs 0.08033, diff -0.03144 [-0.03676, -0.02792], top-1 92.14% vs 90.85% -> better
+T2 c1 vs AD-IQ1_M: KL 0.04889 vs 0.12621, diff -0.07732 [-0.09574, -0.06404], top-1 92.14% vs 88.25% -> better
+T2 c1 vs AD-IQ1_S: KL 0.04889 vs 0.14737, diff -0.09848 [-0.11387, -0.08466], top-1 92.14% vs 87.00% -> better
+T2 c1 vs UD-IQ1_S: KL 0.04889 vs 0.05194, diff -0.00305 [-0.00603, -0.00052], top-1 92.14% vs 92.71% -> not better
+T2 c1 vs UD-IQ2_XXS: KL 0.04889 vs 0.04272, diff +0.00617 [+0.00321, +0.00869], top-1 92.14% vs 93.16% -> not better
+T2 c1 vs UD-IQ1_M: KL 0.04889 vs 0.04306, diff +0.00583 [+0.00366, +0.00802], top-1 92.14% vs 93.29% -> not better
+T2 c1 vs UD-Q2_K_XL: KL 0.04889 vs 0.03492, diff +0.01397 [+0.01173, +0.01603], top-1 92.14% vs 93.74% -> not better
+quality gate: FAIL
