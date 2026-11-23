@@ -1,0 +1,6 @@
+| model                          |       size |     params | backend    | threads |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
+| inkling2_loop ?B IQ2_XXS - 2.0625 bpw |   7.89 GiB |    26.07 B | MTL,BLAS   |       5 |           pp512 |        128.68 ± 0.23 |
+| inkling2_loop ?B IQ2_XXS - 2.0625 bpw |   7.89 GiB |    26.07 B | MTL,BLAS   |       5 |           tg128 |         12.44 ± 0.33 |
+
+build: fcaddf97a (9)

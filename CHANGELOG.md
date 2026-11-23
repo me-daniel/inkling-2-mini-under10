@@ -301,3 +301,16 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Reading, paired against M0rk on S, T1 and T2 (all seen, development):
   - Adopt the mixed statistics if T2 has its CI below 0 and S does not rise by more than 0.001.
   - If T2's CI includes 0, the domain of the refit statistics is not the lever for M0rk's T2 gap. The next suspect is then the domain of the codes' imatrix (step 3c).
+
+## 23 Nov 2026, 06:40: quiet speed re-bench (measured, results/step2/bench2-*.txt)
+
+- Both locks held, the four files back to back, `llama-bench -ngl 99 -p 512 -n 128 -r 3`, build fcaddf97a, M5 Pro.
+
+  | file | bytes | pp512 t/s | tg128 t/s |
+  |---|---|---|---|
+  | M0rk | 8,486,214,944 | 252.71 ± 13.99 | 19.08 ± 0.24 |
+  | GSQ-RCO-IQ2_XS | 8,949,801,504 | 192.61 ± 14.25 | 18.67 ± 0.26 |
+  | UD-IQ2_XXS (7 NVFP4 on CPU) | 8,486,237,632 | 128.68 ± 0.23 | 12.44 ± 0.33 |
+  | UD-Q2_K_XL (11 NVFP4 on CPU) | 9,138,716,608 | 92.49 ± 1.60 | 11.78 ± 1.38 |
+
+- M0rk vs UD-IQ2_XXS: 1.96x prompt, 1.53x generation. vs UD-Q2_K_XL: 2.73x and 1.62x. vs GSQ-RCO: 1.31x prompt (its Q8_0 attention), generation about equal.

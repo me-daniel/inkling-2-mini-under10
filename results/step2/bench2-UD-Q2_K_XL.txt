@@ -1,0 +1,6 @@
+| model                          |       size |     params | backend    | threads |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
+| inkling2_loop ?B Q2_K - Medium |   8.50 GiB |    26.07 B | MTL,BLAS   |       5 |           pp512 |         92.49 ± 1.60 |
+| inkling2_loop ?B Q2_K - Medium |   8.50 GiB |    26.07 B | MTL,BLAS   |       5 |           tg128 |         11.78 ± 1.38 |
+
+build: fcaddf97a (9)
