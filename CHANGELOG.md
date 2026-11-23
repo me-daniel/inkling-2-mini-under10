@@ -374,3 +374,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - Accept c1r if T2 has its CI below 0 and neither S nor T1 rises by more than 0.001.
   - Otherwise c1 stays the candidate, and refinement at 7 of 24 layers is recorded as too small for this file.
 - Credit: the refiner and the calibration text are the sibling's, our own work in Daniel's repos (no outside credit needed). The write-up cites MACaQ (arXiv 2611.10649, Appendix C) for full-Hessian codes-only search in IQ formats.
+
+## 23 Nov 2026, 08:45: step 5 provenance and release rule
+
+- Refiner used read-only: sibling repo at 7a4d0de, scripts/refine-codes.py sha256 1991258126ea616dd0e1f487405bc0f6cf019ea3e4fbf4235569c991e2e4a0f0, its helper scripts/gram-error.py sha256 c02e74d384fae116aac9e5b7d816411c1e4487a74180412ff44be7cbadbf1760. Uncommitted changes to the two files: 0. The sibling will not edit them during the run.
+- Release rule: Daniel has not reviewed refine-codes.py yet. No result from it counts toward a release before that review, so c1r can at most become a candidate pending review. c1 is not affected.
+- Known caveat (sibling, inferred): the Grams come from cand.gguf's forward, not c1's. c1's early layers are IQ1_S, so its later layers see inputs further from cand's than v2a's did. If c1r disappoints, check this mismatch first.
