@@ -465,3 +465,15 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - scripts/lib.sh: the sibling's _take/_give. A background `lockf -k` holds the flock and watches our pid, and the kernel drops the lock when the job ends. Lock files stay on disk, and their existence means nothing. gpu_wait still waits out a running llama-bench. New both_try takes both locks only if both are free right now, else neither (bench2.sh and c1-checks.sh use it instead of their -e tests, which would now wait forever).
 - tests/locks.sh (with tests/lockhold.sh), 12 checks on scratch files, all pass. Covered: exclusion, try, re-entry, retake after give, release on kill -9, both_try (busy, free, GPU already ours), exclusion against a holder taken with the sibling's own gpu-lock.sh, and no holders left over.
 - No job ran on either side during the switch.
+
+## 23 Nov 2026, 21:00: pre-registration, T3 (held-out, before any of our scores on it)
+
+- Daniel's go, in this session: "Score c1 and M0rk". His approval of the sibling's amendment 1 covers the T3 tokens.
+- Data and logits: the sibling's data/T3.txt (sha256 5a26eea1...89a7, checked by the script) and its Q8_0 reference ref-T3-P3.kld, read-only. T1 protocol: P = 3, 16 chunks of 4,096 tokens. We have never read T3 before this run.
+- Files: c1 (frozen, sha256 9975a56d...) and M0rk (a62fd9cc...), both checked by the script. Comparators: GSQ-RCO-IQ2_XS, AD-IQ2_M, AD-IQ2_XXS-Q2, AD-IQ1_M and AD-IQ1_S (every same-weights all-Metal file at or under the cap), plus UD-IQ2_XXS for the gap. results/t3/sha.txt records every hash before scoring. Script: scripts/t3.sh, analysis inline, paired per chunk, 10,000 bootstrap resamples, seed 0.
+- Release tests, each pass or fail, nothing chosen on T3:
+  1. c1, Mac track at the 9 GB tier: c1 minus each of GSQ-RCO-IQ2_XS, AD-IQ2_M, AD-IQ2_XXS-Q2, AD-IQ1_M and AD-IQ1_S has its CI below 0, and top-1 is not lower.
+  2. M0rk, Mac track at 8.49 GB: the same against AD-IQ2_XXS-Q2, AD-IQ1_M and AD-IQ1_S.
+  3. Descriptive: c1 and M0rk against UD-IQ2_XXS (difference, CI, ratio), for the card's stated gap.
+- Failure plan: a file that fails its test is not released on the Mac track. If c1 loses only to GSQ-RCO-IQ2_XS (which is larger), the claim narrows to "at or under 8.67 GB", stated as such.
+- Hash note: the sibling rewrote two unpushed commits before its push, to remove a local path. Its 9b03ba5 (lockf) is now 1d89dab, and ca5b1e4 (splice.py fixes) is now 27fee5f, with identical trees for the files we use (git diff empty). Entries above keep the hashes as they were written. lib.sh's comment uses the new one.

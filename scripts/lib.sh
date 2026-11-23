@@ -4,7 +4,7 @@ BIN="$ROOT/vendor/llama.cpp/build/bin"; M="$ROOT/models"; L="$ROOT/logs"; PY="$S
 mkdir -p "$L"
 step() { echo "[$(date '+%H:%M:%S')] $*"; }
 # Shared locks with the sibling repo: ~/GitHub/.gpu.lock (one heavy GPU job) and ~/GitHub/.cpu.lock (one heavy CPU
-# job). Kernel locks since 23 Nov 18:30 (agreed with the sibling, its 9b03ba5): a background `lockf -k FILE` holds an
+# job). Kernel locks since 23 Nov 18:30 (agreed with the sibling, its 1d89dab): a background `lockf -k FILE` holds an
 # flock and watches this script's pid, so the kernel drops the lock when the job ends, however it ends. The file stays
 # on disk and only names the last holder ("<holder pid> <owner> <time>"); its existence means nothing, and nothing is
 # removed by hand. (The old pid files could lose a lock to a stale-lock rm racing a new set -C.)
@@ -46,10 +46,11 @@ both_try() { ! pgrep -x llama-bench > /dev/null && _take "$LOCK" -t 0 || return 
 # Runs from before 23 Nov keep their old key (path size mtime set args ref bin), accepted by _slegacy.
 _sfile() { _sf=$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1"); printf '%s %s' "$_sf" "$(stat -L -f '%z %m %i' "$_sf")"; }
 _sdylibs() { stat -f '%m' "$BIN"/llama-perplexity "$BIN"/*.dylib 2>/dev/null | cksum | cut -d' ' -f1; }
-_schunks() { case $1 in S|T1) echo 16 ;; T2) echo 5 ;; batA-*) echo 32 ;; *) echo "" ;; esac; }
+_schunks() { case $1 in S|T1|T3) echo 16 ;; T2) echo 5 ;; batA-*) echo 32 ;; *) echo "" ;; esac; }
 # sets: S, T1, T2 (our data/, the sibling's ref-SET-P3.kld) and batA-<domain> (the sibling's fresh-domain battery A:
 # its data/battery/A-<domain>.txt and models/logits/batA-<domain>-P3.kld, read-only, at its settings -c 1024 --chunks 32)
 _sset_paths() { case $1 in
+    T3) _stext="$SIB/data/T3.txt"; _sref="$SIB/models/logits/ref-T3-P3.kld"; _sctx=4096; _sxtra="" ;;  # the sibling's held-out set, T1 protocol
     batA-*) _stext="$SIB/data/battery/A-${1#batA-}.txt"; _sref="$SIB/models/logits/$1-P3.kld"; _sctx=1024; _sxtra="--chunks 32" ;;
     *) _stext="$ROOT/data/$1.txt"; _sref="$SIB/models/logits/ref-$1-P3.kld"; _sctx=4096; [ "$1" = T2 ] && _sctx=2048; _sxtra="" ;;
     esac; }
