@@ -314,3 +314,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   | UD-Q2_K_XL (11 NVFP4 on CPU) | 9,138,716,608 | 92.49 ± 1.60 | 11.78 ± 1.38 |
 
 - M0rk vs UD-IQ2_XXS: 1.96x prompt, 1.53x generation. vs UD-Q2_K_XL: 2.73x and 1.62x. vs GSQ-RCO: 1.31x prompt (its Q8_0 attention), generation about equal.
+
+## 23 Nov 2026, 07:15: step 3c result (measured, results/step3/t2-imatrix.txt)
+
+- T2: M0 0.06517. m0-imat-mine 0.06517, diff -0.00000 [-0.00200, +0.00212]. m0-imat-bart 0.06447, diff -0.00070 [-0.00169, +0.00014].
+- By the registered rule (both within ±0.002): the domain of the imatrix behind llama-quantize's gate_up codes does not move T2, as it did not move S. Our capture included 137 conversations. The domain route for the codes is dropped.
+- Step 3d is still open. It tests the domain of the refit's E[x] and Var x, which enter the mean term that the diagonal imatrix weight ignores.
