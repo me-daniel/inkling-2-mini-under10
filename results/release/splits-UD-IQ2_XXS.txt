@@ -1,0 +1,17 @@
+0.00.609.066 I load_tensors:          CPU model buffer size =     0.00 MiB
+0.00.609.067 I load_tensors:         MTL0 model buffer size =     0.00 MiB
+0.00.745.101 I sched_reserve: graph: nodes = 12274, splits = 32, input objects = 4, input tensors = 12
+0.04.285.139 I load_tensors:   CPU_Mapped model buffer size =   182.25 MiB
+0.04.285.139 I load_tensors:   CPU_Mapped model buffer size =   234.65 MiB
+0.04.285.140 I load_tensors:   CPU_Mapped model buffer size =   182.25 MiB
+0.04.285.141 I load_tensors:   CPU_Mapped model buffer size =   182.25 MiB
+0.04.285.142 I load_tensors:  MTL0_Mapped model buffer size =   234.67 MiB
+0.04.285.143 I load_tensors:  MTL0_Mapped model buffer size =   746.65 MiB
+0.04.285.143 I load_tensors:  MTL0_Mapped model buffer size =  1245.90 MiB
+0.04.285.144 I load_tensors:  MTL0_Mapped model buffer size =   204.70 MiB
+0.04.285.144 I load_tensors:  MTL0_Mapped model buffer size =   541.34 MiB
+0.04.285.144 I load_tensors:  MTL0_Mapped model buffer size =  1748.24 MiB
+0.04.285.145 I load_tensors:  MTL0_Mapped model buffer size =   184.83 MiB
+0.04.285.145 I load_tensors:  MTL0_Mapped model buffer size =   216.36 MiB
+0.04.285.168 I load_tensors:  MTL0_Mapped model buffer size =  1448.59 MiB
+0.04.507.919 I sched_reserve: graph: nodes = 12274, splits = 32, input objects = 4, input tensors = 12

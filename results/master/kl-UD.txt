@@ -1,0 +1,1 @@
+S UD-IQ2_XXS on master (NVFP4 on Metal) vs our build (NVFP4 on CPU): 0.07072 vs 0.07064, diff +0.00008 [-0.00011, +0.00027], top-1 89.47% vs 89.48%

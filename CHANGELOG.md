@@ -512,3 +512,14 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - Installing LM Studio for the load test (not installed here).
   - Lowering the GPU wired limit to test the 16 GB budget (needs sudo, would affect the sibling).
   - A task battery with headroom for c1, M0rk and UD-IQ2_XXS (hours of GPU).
+
+## 24 Nov 2026, 11:10: release prep result, and upstream NVFP4 Metal support ends the speed case (measured)
+
+- Release copies (results/release/): general.file_type 7 to 19, exactly 1 byte changed, S chunk-identical to the frozen files (c1 0.072090, M0rk 0.087130). Graph splits on our build fcaddf97a: c1 2, M0rk 2, UD-IQ2_XXS 32.
+- Same-session bench on fcaddf97a (llama-bench -p 512 -n 128 -r 3): c1 249.1 / 21.3, M0rk 269.3 / 21.9, UD-IQ2_XXS 148.8 / 14.1 t/s. c1 vs UD: 1.67x pp512, 1.51x tg128 (the earlier "about 2x" mixed sessions).
+- Upstream merged NVFP4 on Metal (ggml-org/llama.cpp #32825, 51831d47d, 23 Nov 19:02 UTC); not in a release tag yet (b12670 is 2 commits before it). scripts/master-nvfp4.sh on clean master 12d47ba2f (results/master/):
+  - UD-IQ2_XXS graph splits 32 to 2: fully on Metal.
+  - UD-IQ2_XXS on S, master vs our build: 0.07072 vs 0.07064, diff +0.00008 [-0.00011, +0.00027]. The Metal NVFP4 path keeps the score.
+  - Same-session bench on master: c1 264.8 ± 18.8 / 22.1, UD-IQ2_XXS 262.3 / 21.6 t/s. The speed gap is gone.
+- Apps (checked 24 Nov): Ollama 0.40.17 pins b12257, 0.40.18-rc0 b12651; LM Studio's newest llama.cpp pack 2.79.0 (20 Nov) predates the merge, and its NVFP4 issue #1884 is open. Ollama bumps within about a day of a tag; LM Studio in about a week (inferred from their history).
+- Reading: the Mac-track case for c1 and M0rk (all-Metal, so faster than Unsloth in stock llama.cpp) lasts until the apps ship a tag with 51831d47d, likely one to two weeks. After that Unsloth's files are as fast and better per byte. The release decision goes back to Daniel with this; the card draft is on hold.
