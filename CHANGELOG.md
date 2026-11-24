@@ -493,3 +493,22 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - c1 +0.00128 [-0.00045, +0.00292], ratio 1.019, top-1 89.08% vs 89.50%. A tie on held-out prose within noise. On T2 and the off-domain texts, UD stays ahead (ratios 1.03-1.14).
   - M0rk +0.01662 [+0.01442, +0.01872], ratio 1.241.
 - Both release tests the v1 frame asks for are now met, for both files: Mac track on T1, T2 and T3, stability 7/7, identical score on unpatched upstream, and 16K fit. M0rk's stability and upstream checks are from 22-23 Nov. What remains is Daniel's release decision and the load test in LM Studio.
+
+## 24 Nov 2026, 05:55: release decisions reviewed by Astra (high) and Fable (medium); release preparation
+
+- Daniel, relayed by the sibling: "I decide the default switch at the very end. until then keep running, your sibling as well. Ask Astra high and Fable medium for second opinion to answer the rest". Reviews and the joint response: reviews/2026-11-24-decisions-{astra,fable}.md. Uploads still wait for Daniel's go.
+- Decided from the reviews:
+  - Release both: c1 is the default, and M0rk is the lower-memory variant with its limits stated. Unsloth gets credit for M0rk's type map.
+  - Advertise 8K context. 16K is "projected, untested on 16 GB hardware".
+  - No "ties" in the Unsloth wording, and speed is given as same-session ratios.
+  - The card states the per-byte loss to Unsloth and the shelf life of the all-Metal case.
+- Rounding bound, instead of a rerun (results/rounding-bound.txt, analysis/rounding_bound.py): the worst-case CI shift is ±0.00031 at 16 chunks. Every pre-registered verdict keeps its sign. c1/UD-IQ2_XXS on T1 and T3 spans 0 even at worst. **Correction to the 18:25 entry**: python and rust are "not resolved at the printed precision" (bound ±0.00063 at 32 chunks), not "within noise".
+- c1 minus M0rk on T3: -0.01534 [-0.01725, -0.01333].
+- scripts/release-prep.sh (running):
+  - Release copies in models/release/ as APFS clones, with general.file_type 19 (MOSTLY_IQ2_XXS) instead of the inherited 7 (Q8_0). Exactly 1 byte differs from the frozen file.
+  - sha256: c1 a01a9156..., M0rk 0d24b048... (results/release/sha256.txt).
+  - Then S chunk-identity on the copies, graph splits from one verbose run each (c1, M0rk, UD-IQ2_XXS), and a same-session bench of the three.
+- Open for Daniel:
+  - Installing LM Studio for the load test (not installed here).
+  - Lowering the GPU wired limit to test the 16 GB budget (needs sudo, would affect the sibling).
+  - A task battery with headroom for c1, M0rk and UD-IQ2_XXS (hours of GPU).

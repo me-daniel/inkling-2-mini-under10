@@ -1,0 +1,10 @@
+final-c1-T3-P3 - final-UD-IQ2_XXS-T3-P3: +0.00128 [-0.00045, +0.00292], bound ±0.00031 -> CI could be [-0.00076..-0.00014, +0.00261..+0.00323]: spans 0 even at worst
+final-c1-T1-P3 - final-UD-IQ2_XXS-T1-P3: +0.00100 [-0.00092, +0.00280], bound ±0.00031 -> CI could be [-0.00123..-0.00061, +0.00249..+0.00311]: spans 0 even at worst
+final-c1-T2-P3 - final-UD-IQ2_XXS-T2-P3: +0.00617 [+0.00321, +0.00869], bound ±0.00009 -> CI could be [+0.00312..+0.00330, +0.00860..+0.00878]: sign robust
+batA-python-c1 - batA-python-UD-IQ2_XXS: +0.00225 [-0.00017, +0.00474], bound ±0.00063 -> CI could be [-0.00080..+0.00046, +0.00411..+0.00537]: NOT robust
+batA-rust-c1 - batA-rust-UD-IQ2_XXS: +0.00105 [-0.00021, +0.00233], bound ±0.00063 -> CI could be [-0.00084..+0.00042, +0.00170..+0.00296]: NOT robust
+batA-german-c1 - batA-german-UD-IQ2_XXS: +0.00728 [+0.00420, +0.01033], bound ±0.00063 -> CI could be [+0.00357..+0.00483, +0.00970..+0.01096]: sign robust
+batA-math-c1 - batA-math-UD-IQ2_XXS: +0.00629 [+0.00374, +0.00901], bound ±0.00063 -> CI could be [+0.00311..+0.00437, +0.00838..+0.00964]: sign robust
+final-c1-T3-P3 - final-GSQ-RCO-IQ2_XS-T3-P3: -0.02332 [-0.02628, -0.02034], bound ±0.00031 -> CI could be [-0.02659..-0.02597, -0.02065..-0.02003]: sign robust
+final-m0rk-T3-P3 - final-AD-IQ2_XXS-Q2-T3-P3: -0.03821 [-0.04187, -0.03431], bound ±0.00031 -> CI could be [-0.04218..-0.04156, -0.03462..-0.03400]: sign robust
+final-c1-T3-P3 - final-m0rk-T3-P3: -0.01534 [-0.01725, -0.01333], bound ±0.00031 -> CI could be [-0.01756..-0.01694, -0.01364..-0.01302]: sign robust
