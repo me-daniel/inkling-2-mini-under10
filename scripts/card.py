@@ -56,7 +56,8 @@ def footprint(path: Path) -> int:
 
 
 k = load()
-kl = lambda n, s: k[f"final-{n}-{s}-P3"]["chunks"].mean() if f"final-{n}-{s}-P3" in k else None
+ALIAS = {("m0rk", "T1"): "cand", ("m0rk", "T2"): "cand"}  # M0rk's T1/T2 runs were named final-cand (comparators.sh, CAND = M0rk)
+kl = lambda n, s: (lambda r: k[r]["chunks"].mean() if r in k else None)(f"final-{ALIAS.get((n, s), n)}-{s}-P3")
 f5 = lambda x: "not scored" if x is None else f"{x:.4f}"
 ident = need(R / "release/identical.txt")
 if ident.count("chunks identical: True") != 2:
@@ -84,8 +85,8 @@ card = f"""# Inkling 2 Mini GGUF for 16 GB Macs: two files that run entirely on 
 
 - Two GGUFs of Inkling 2 Mini, {size('m0rk') / 1e9:.2f} GB and {size('c1') / 1e9:.2f} GB. Every tensor is in a type that stock llama.cpp can multiply on Metal.
 - Among the files we tested that run entirely on Metal in stock llama.cpp, each is the closest to the original model at or under its size, on three test sets including a sealed one opened once.
-- Unsloth's files are closer to the original per byte. Their NVFP4 expert tensors run off the GPU in stock llama.cpp, so there they are slower: on our Mac, {FILES['c1']} reads prompts {pp['c1'][0] / pp['UD-IQ2_XXS'][0]:.2f}x and generates {pp['c1'][1] / pp['UD-IQ2_XXS'][1]:.2f}x as fast as UD-IQ2_XXS. Unsloth's own llama.cpp build has NVFP4 Metal kernels, and the speed difference does not apply there.
-- Tested on 23 and 24 Nov 2026. Later uploads are not covered.
+- Unsloth's files are closer to the original per byte. In llama.cpp as of 21 Nov 2026 their NVFP4 expert tensors run off the GPU, so there they are slower: on our Mac, {FILES['c1']} reads prompts {pp['c1'][0] / pp['UD-IQ2_XXS'][0]:.2f}x and generates {pp['c1'][1] / pp['UD-IQ2_XXS'][1]:.2f}x as fast as UD-IQ2_XXS. Unsloth's own llama.cpp build and later upstream versions have NVFP4 Metal kernels, and the speed difference does not apply there.
+- Tested on 23 and 24 Nov 2026 with llama.cpp `fcaddf97a` (21 Nov 2026). Later uploads and llama.cpp versions are not covered.
 
 ## Which file
 
@@ -104,7 +105,7 @@ Memory, measured on a 48 GB Mac (llama-bench at 16K depth, peak footprint plus w
 
 KL divergence of the next-token distribution against the Q8_0 reference at 3 loop passes (lower is closer). T1: 16 x 4,096 WikiText-2 test tokens. T2: 5 x 2,048 tokens of reasoning traces the model wrote on GSM8K train prompts. T3: 16 x 4,096 WikiText-2 test tokens, sealed until both files were frozen and the pass rules written down, then opened once. T1 and T2 informed choices during development; T3 did not.
 
-| File | Bytes | Expert tensors off Metal (stock llama.cpp) | KL T1 | KL T2 | KL T3 |
+| File | Bytes | Expert tensors off Metal (llama.cpp of 21 Nov 2026) | KL T1 | KL T2 | KL T3 |
 |---|---|---|---|---|---|
 """ + "\n".join(rows) + f"""
 
@@ -123,13 +124,13 @@ Against Unsloth UD-IQ2_XXS ({size('UD-IQ2_XXS'):,} bytes, {100 * (size('c1') / s
 
 ## Speed
 
-One Mac ({re.search(r'GPU name:\s+MTL0 \(([^)]+)\)', need(ROOT / 'logs/step2-memory-m0rk-16384.log')).group(1)}), stock llama.cpp, llama-bench -p 512 -n 128 -r 3, the three files back to back in one session with nothing else running:
+One Mac ({re.search(r'GPU name:\s+MTL0 \(([^)]+)\)', need(ROOT / 'logs/step2-memory-m0rk-16384.log')).group(1)}), stock llama.cpp as of 21 Nov 2026, llama-bench -p 512 -n 128 -r 3, the three files back to back in one session with nothing else running:
 
 | File | pp512 t/s | tg128 t/s |
 |---|---|---|
-""" + "\n".join(f"| {n} | {pp[n][0]:.1f} | {pp[n][1]:.1f} |" for n in ("c1", "m0rk", "UD-IQ2_XXS")) + f"""
+""" + "\n".join(f"| {FILES.get(n, n)} | {pp[n][0]:.1f} | {pp[n][1]:.1f} |" for n in ("c1", "m0rk", "UD-IQ2_XXS")) + f"""
 
-The difference comes from the 7 NVFP4 expert tensors in UD-IQ2_XXS, which stock llama.cpp cannot multiply on Metal. This would change if the Metal backend gained NVFP4 matrix multiplies, and it does not hold for Unsloth's own llama.cpp build.
+The difference comes from the 7 NVFP4 expert tensors in UD-IQ2_XXS, which llama.cpp as of 21 Nov 2026 cannot multiply on Metal. Later versions and Unsloth's own build add NVFP4 Metal kernels, and there the difference does not hold.
 
 ## Stability
 
@@ -141,7 +142,7 @@ Nothing was retrained. The expert tensors are our own encodings: llama-quantize 
 
 ## Limits
 
-- Our encoding does not beat Unsloth's per byte at any size we tested. The case for these files is that they run entirely on the GPU in stock llama.cpp, and the speed that follows from it.
+- Our encoding does not beat Unsloth's per byte at any size we tested. The case for these files is that they run entirely on the GPU in llama.cpp as of 21 Nov 2026, and the speed that follows from it there.
 - KL on prose and reasoning traces, plus a smoke test. No task benchmark with headroom was run.
 - The per-chunk KL values are rebuilt from running means printed with 5 decimals. Every verdict above keeps its sign under the worst-case rounding.
 - Engine: llama.cpp `fcaddf97a` (patched build used for the tables). Stock upstream `c661033` scores {FILES['c1']} identically on S.
