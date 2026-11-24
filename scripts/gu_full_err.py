@@ -10,7 +10,7 @@ g = np.memmap(GD / f"{n}.gram.f32", dtype=np.float32, mode="r").reshape(E, C, C)
 im = {t.name: t for t in gguf.GGUFReader(GD / "imatrix.gguf").tensors}
 cnt = np.asarray(im[n + ".counts"].data, dtype=np.float64).reshape(-1)
 mean = np.asarray(im[n + ".in_sum"].data, dtype=np.float64).reshape(E, C) / np.maximum(cnt, 1)[:, None]
-src = {t.name: t for t in gguf.GGUFReader("/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf").tensors}[n]
+src = {t.name: t for t in gguf.GGUFReader(pathlib.Path(__file__).resolve().parents[2] / "inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf").tensors}[n]
 W = (np.asarray(src.data).view(np.uint16).astype(np.uint32) << 16).view(np.float32)
 enc = []
 for arg in sys.argv[3:]:

@@ -13,6 +13,7 @@ scale bits back. Each tensor is checked: only scale bits changed, decode == sigm
 """
 
 import argparse
+import os
 import sys
 
 import numpy as np
@@ -132,7 +133,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("src"); ap.add_argument("imatrix"); ap.add_argument("out")
     ap.add_argument("--layers", required=True, help="lo-hi or a comma list"); ap.add_argument("--kind", default="ffn_gate_up_exps")
-    ap.add_argument("--bf16", default="/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf")
+    ap.add_argument("--bf16", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf"))
     a = ap.parse_args()
     if "," in a.layers or "-" not in a.layers:
         todo = [int(x) for x in a.layers.split(",")]
@@ -167,7 +168,7 @@ def main() -> None:
         ratio = f"{tot1 / tot0:.4f}" if tot0 > 0 else "n/a (no tokens)"
         print(f"{n}\t{ty.name}\tmodel error after/before {ratio}\tbyte columns touched {np.flatnonzero(changed).tolist()}", flush=True)
     wr.write_header_to_file(); wr.write_kv_data_to_file(); wr.write_tensors_to_file(); wr.close()
-    import os; os.replace(a.out + ".part", a.out)
+    os.replace(a.out + ".part", a.out)
 
 
 if __name__ == "__main__":

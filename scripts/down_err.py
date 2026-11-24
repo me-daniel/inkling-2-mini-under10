@@ -5,7 +5,7 @@ import numpy as np, gguf
 from gguf.quants import dequantize
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import gptq_q2 as g
-ROOT = pathlib.Path(__file__).resolve().parents[1]; SM = pathlib.Path("/Users/daniel/GitHub/inkling-2-mini-quant/models")
+ROOT = pathlib.Path(__file__).resolve().parents[1]; SM = ROOT.parent / "inkling-2-mini-quant/models"
 GRAMS = {"S-text": ROOT / "models/grams/s-x2", "wikitext-train": ROOT / "models/grams/wt-x2", "conversations": ROOT / "models/grams/eval"}
 src = {t.name: t for t in gguf.GGUFReader(SM / "Inkling-2-Mini-BF16.gguf").tensors}
 print("layer\tgram\tencoding\terr")

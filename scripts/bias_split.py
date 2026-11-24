@@ -10,7 +10,7 @@ from gguf import GGMLQuantizationType as Q
 from gguf.quants import dequantize
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 L = int(sys.argv[1]); name = f"blk.{L}.ffn_down_exps.weight"
-src = {t.name: t for t in gguf.GGUFReader("/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf").tensors}[name]
+src = {t.name: t for t in gguf.GGUFReader(pathlib.Path(__file__).resolve().parents[2] / "inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf").tensors}[name]
 w = torch.from_numpy((np.asarray(src.data).view(np.uint16).astype(np.uint32) << 16).view(np.float32)).double()
 E, R, C = w.shape
 EV = pathlib.Path(__import__("os").environ.get("EVAL_DIR", ROOT / "models/grams/eval"))

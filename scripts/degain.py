@@ -6,7 +6,7 @@ import numpy as np, gguf
 from gguf import GGMLQuantizationType as Q
 from gguf.quants import dequantize
 ap = argparse.ArgumentParser(); ap.add_argument("src"); ap.add_argument("out"); ap.add_argument("layer", type=int)
-ap.add_argument("--kind", default="ffn_down_exps"); ap.add_argument("--bf16", default="/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf")
+ap.add_argument("--kind", default="ffn_down_exps"); ap.add_argument("--bf16", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf"))
 a = ap.parse_args(); n = f"blk.{a.layer}.{a.kind}.weight"
 t = {x.name: x for x in gguf.GGUFReader(a.src).tensors}[n]; assert t.tensor_type == Q.Q2_0, t.tensor_type.name
 W = (np.asarray({x.name: x for x in gguf.GGUFReader(a.bf16).tensors}[n].data).view(np.uint16).astype(np.uint32) << 16).view(np.float32)

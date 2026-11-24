@@ -12,7 +12,7 @@ from gguf import GGMLQuantizationType as Q
 from gguf.quants import dequantize
 BLK = {Q.Q2_0: (64, 18), Q.IQ4_NL: (32, 18), Q.IQ1_S: (256, 50), Q.IQ2_XXS: (256, 66), Q.IQ2_XS: (256, 74), Q.IQ2_S: (256, 82)}
 ap = argparse.ArgumentParser(); ap.add_argument("src"); ap.add_argument("out"); ap.add_argument("layer", type=int)
-ap.add_argument("--kind", required=True); ap.add_argument("--target", type=float, default=1.0, help="fixed per-row target gain"); ap.add_argument("--target-from", help="per-row target gain = gain of this file's tensor (default: 1)"); ap.add_argument("--bf16", default="/Users/daniel/GitHub/inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf")
+ap.add_argument("--kind", required=True); ap.add_argument("--target", type=float, default=1.0, help="fixed per-row target gain"); ap.add_argument("--target-from", help="per-row target gain = gain of this file's tensor (default: 1)"); ap.add_argument("--bf16", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../inkling-2-mini-quant/models/Inkling-2-Mini-BF16.gguf"))
 a = ap.parse_args(); n = f"blk.{a.layer}.{a.kind}.weight"; sn = n.replace(".weight", ".scale")
 T = {x.name: x for x in gguf.GGUFReader(a.src).tensors}; t = T[n]; ty = t.tensor_type
 assert ty in BLK, ty.name
