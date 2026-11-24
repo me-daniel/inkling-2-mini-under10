@@ -523,3 +523,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
   - Same-session bench on master: c1 264.8 ± 18.8 / 22.1, UD-IQ2_XXS 262.3 / 21.6 t/s. The speed gap is gone.
 - Apps (checked 24 Nov): Ollama 0.40.17 pins b12257, 0.40.18-rc0 b12651; LM Studio's newest llama.cpp pack 2.79.0 (20 Nov) predates the merge, and its NVFP4 issue #1884 is open. Ollama bumps within about a day of a tag; LM Studio in about a week (inferred from their history).
 - Reading: the Mac-track case for c1 and M0rk (all-Metal, so faster than Unsloth in stock llama.cpp) lasts until the apps ship a tag with 51831d47d, likely one to two weeks. After that Unsloth's files are as fast and better per byte. The release decision goes back to Daniel with this; the card draft is on hold.
+
+## 24 Nov 2026, 12:40: published (Daniel's go)
+
+- Code: this repo public at github.com/me-daniel/inkling-2-mini-under10 (absolute paths in the current files replaced by repo-relative ones first; older commits still hold local paths).
+- Model: c1's release copy uploaded to Me-Daniel/Inkling-2-Mini-Metal-GGUF as Inkling-2-Mini-Metal-8.9G.gguf, HF commit 5b76341ad. HF reports 8,932,121,888 bytes and sha256 a01a915627faad63ffef439fbdaf12cce189dcb864952c00150e073d859bbca9, equal to results/release/sha256.txt.
+- M0rk is not published. The card section is drafts/hf-section.md; Daniel inserts it into the HF card by hand.
