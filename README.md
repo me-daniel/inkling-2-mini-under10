@@ -7,11 +7,11 @@ Code, logs and results behind `Inkling-2-Mini-Metal-8.9G.gguf` in [Me-Daniel/Ink
 - 8,932,121,888 bytes, sha256 `a01a915627faad63ffef439fbdaf12cce189dcb864952c00150e073d859bbca9`.
 - Every tensor is in a type that llama.cpp can multiply on Metal. The expert tensors are our own encodings; nothing was retrained.
 - Fits the 11,453 MB default GPU budget of a 16 GB Mac at 8K context. 16K is projected from measurements on a 48 GB Mac (45 MB spare) and untested on 16 GB hardware.
-- Use it only if the 11.5 GB files don't fit. On the sealed T3 set its KL against the Q8_0 reference is 0.0703, against 0.0285 for `Inkling-2-Mini-Metal.gguf`.
+- Use it only if the 11.5 GB files don't fit. On the held-out T3 set its KL against the Q8_0 reference is 0.0703, against 0.0285 for `Inkling-2-Mini-Metal.gguf`.
 
 ## Results
 
-KL divergence of the next-token distribution against the Q8_0 reference at 3 loop passes; lower is closer. T3 (16 x 4,096 WikiText-2 test tokens) was sealed until the file was frozen and the pass rules were written down, then opened once.
+KL divergence of the next-token distribution against the Q8_0 reference at 3 loop passes; lower is closer. T3 (16 x 4,096 WikiText-2 test tokens) is held out: it was not used to build or select the file, and was scored once, after the file was frozen and the pass rules were written down.
 
 | File | GB | KL T3 |
 |---|---|---|

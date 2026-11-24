@@ -84,7 +84,7 @@ t3lines = [l for l in t3.splitlines() if l.startswith("T3 ")]
 card = f"""# Inkling 2 Mini GGUF for 16 GB Macs: two files that run entirely on the Mac GPU
 
 - Two GGUFs of Inkling 2 Mini, {size('m0rk') / 1e9:.2f} GB and {size('c1') / 1e9:.2f} GB. Every tensor is in a type that stock llama.cpp can multiply on Metal.
-- Among the files we tested that run entirely on Metal in stock llama.cpp, each is the closest to the original model at or under its size, on three test sets including a sealed one opened once.
+- Among the files we tested that run entirely on Metal in stock llama.cpp, each is the closest to the original model at or under its size, on three test sets including a held-out one scored once.
 - Unsloth's files are closer to the original per byte. In llama.cpp as of 21 Nov 2026 their NVFP4 expert tensors run off the GPU, so there they are slower: on our Mac, {FILES['c1']} reads prompts {pp['c1'][0] / pp['UD-IQ2_XXS'][0]:.2f}x and generates {pp['c1'][1] / pp['UD-IQ2_XXS'][1]:.2f}x as fast as UD-IQ2_XXS. Unsloth's own llama.cpp build and later upstream versions have NVFP4 Metal kernels, and the speed difference does not apply there.
 - Tested on 23 and 24 Nov 2026 with llama.cpp `fcaddf97a` (21 Nov 2026). Later uploads and llama.cpp versions are not covered.
 
@@ -103,7 +103,7 @@ Memory, measured on a 48 GB Mac (llama-bench at 16K depth, peak footprint plus w
 
 ## Quality
 
-KL divergence of the next-token distribution against the Q8_0 reference at 3 loop passes (lower is closer). T1: 16 x 4,096 WikiText-2 test tokens. T2: 5 x 2,048 tokens of reasoning traces the model wrote on GSM8K train prompts. T3: 16 x 4,096 WikiText-2 test tokens, sealed until both files were frozen and the pass rules written down, then opened once. T1 and T2 informed choices during development; T3 did not.
+KL divergence of the next-token distribution against the Q8_0 reference at 3 loop passes (lower is closer). T1: 16 x 4,096 WikiText-2 test tokens. T2: 5 x 2,048 tokens of reasoning traces the model wrote on GSM8K train prompts. T3: 16 x 4,096 WikiText-2 test tokens, held out: scored once, after both files were frozen and the pass rules written down. T1 and T2 informed choices during development; T3 did not.
 
 | File | Bytes | Expert tensors off Metal (llama.cpp of 21 Nov 2026) | KL T1 | KL T2 | KL T3 |
 |---|---|---|---|---|---|

@@ -529,3 +529,9 @@ Decided after G2 failed and after these facts: X2 (UD-IQ2_XXS with only its 7 NV
 - Code: this repo public at github.com/me-daniel/inkling-2-mini-under10 (absolute paths in the current files replaced by repo-relative ones first; older commits still hold local paths).
 - Model: c1's release copy uploaded to Me-Daniel/Inkling-2-Mini-Metal-GGUF as Inkling-2-Mini-Metal-8.9G.gguf, HF commit 5b76341ad. HF reports 8,932,121,888 bytes and sha256 a01a915627faad63ffef439fbdaf12cce189dcb864952c00150e073d859bbca9, equal to results/release/sha256.txt.
 - M0rk is not published. The card section is drafts/hf-section.md; Daniel inserts it into the HF card by hand.
+
+## 24 Nov 2026, 22:10: HF file names and -hf (Daniel's go)
+
+- llama.cpp's `-hf repo` without a tag takes the first GGUF of the repo's alphabetical file list (master `common/download.cpp`, `find_best_model`; no Q4_K_M or Q8_0 file exists). After the other session's labeled copies (HF 3fe3e33) that was Inkling-2-Mini-Metal-8.9G-IQ2_XXS.gguf.
+- HF 2f08407b9: Inkling-2-Mini-Metal-11.6G-IQ3_XXS.gguf, a server-side copy of refined2 (sha256 8771750193bb...), sorts first. Checked against the live list with the same rules: bare `-hf` and `:IQ3_XXS` load refined2; `:IQ2_XXS` and `:8.9G` load this repo's file.
+- "held-out" instead of "sealed" for T3 (the sibling opened T3 for v2m on 23 Nov): in the HF section (same commit), README, drafts/hf-section.md and scripts/card.py.
